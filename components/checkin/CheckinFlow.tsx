@@ -181,32 +181,28 @@ export function CheckinFlow({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-bg)]">
       <div className="flex justify-end p-4">
         <button
           type="button"
           onClick={schliessen}
           aria-label="Schließen"
-          className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-zinc-400"
+          className="btn btn-icon text-xl"
         >
           ×
         </button>
       </div>
 
       {schritt === "lade-standort" && (
-        <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-zinc-600">
+        <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted">
           Wir suchen deinen Standort …
         </div>
       )}
 
       {schritt === "fehler" && zuWeitEntfernt === null && (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-          <p className="text-base text-zinc-700">{fehlerText}</p>
-          <button
-            type="button"
-            onClick={standortHolen}
-            className="h-11 rounded-xl bg-orange-500 px-6 text-sm font-semibold text-white"
-          >
+          <p className="text-base">{fehlerText}</p>
+          <button type="button" onClick={standortHolen} className="btn btn-primary">
             Nochmal versuchen
           </button>
         </div>
@@ -214,21 +210,17 @@ export function CheckinFlow({
 
       {schritt === "fehler" && zuWeitEntfernt !== null && (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-          <p className="text-base text-zinc-700">
+          <p className="text-base">
             Du bist gerade {formatDistance(zuWeitEntfernt)} von diesem Ort entfernt.
           </p>
-          <button
-            type="button"
-            onClick={eingecheckt}
-            className="h-11 rounded-xl bg-orange-500 px-6 text-sm font-semibold text-white"
-          >
+          <button type="button" onClick={eingecheckt} className="btn btn-primary">
             Nochmal versuchen
           </button>
           {erstelltVon && user?.id === erstelltVon && (
             <button
               type="button"
               onClick={() => setSchritt("pin-korrigieren")}
-              className="text-sm font-medium text-zinc-500 underline-offset-2 hover:underline"
+              className="btn btn-ghost text-sm"
             >
               Ist der Pin falsch gesetzt? Jetzt korrigieren
             </button>
@@ -242,7 +234,7 @@ export function CheckinFlow({
 
       {schritt === "auswahl" && (
         <div className="flex-1 overflow-y-auto px-6 pb-24">
-          <h1 className="text-lg font-bold text-zinc-900">Was siehst du gerade?</h1>
+          <h1 className="text-lg">Was siehst du gerade?</h1>
 
           {gemeldetSortiert.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
@@ -264,13 +256,13 @@ export function CheckinFlow({
             </div>
           )}
 
-          <div className="mt-5">
+          <div className="field mt-5">
             <input
               type="text"
               value={suchbegriff}
               onChange={(e) => setSuchbegriff(e.target.value)}
               placeholder="Weitere hinzufügen …"
-              className="h-11 w-full rounded-xl border border-zinc-200 px-3 text-base text-zinc-900"
+              className="input"
             />
             {gefundeneWeitere.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">
@@ -293,12 +285,8 @@ export function CheckinFlow({
             )}
           </div>
 
-          <div className="fixed inset-x-0 bottom-0 bg-white p-4">
-            <button
-              type="button"
-              onClick={eingecheckt}
-              className="h-12 w-full rounded-xl bg-orange-500 text-base font-semibold text-white transition-colors hover:bg-orange-600"
-            >
+          <div className="fixed inset-x-0 bottom-0 bg-[var(--color-bg)] p-4">
+            <button type="button" onClick={eingecheckt} className="btn btn-primary btn-block">
               Das habe ich gesehen
             </button>
           </div>
@@ -306,7 +294,7 @@ export function CheckinFlow({
       )}
 
       {schritt === "speichert" && (
-        <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-zinc-600">
+        <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted">
           Wird gespeichert …
         </div>
       )}
@@ -315,23 +303,23 @@ export function CheckinFlow({
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
           {neueFreischaltungen.length > 0 ? (
             <>
-              <p className="text-sm font-medium text-zinc-500">Neu freigeschaltet!</p>
+              <p className="card-kicker">Neu freigeschaltet!</p>
               <div className="flex flex-col gap-3">
                 {neueFreischaltungen.map((typ, i) => (
                   <div
                     key={typ.id}
                     style={{ animationDelay: `${i * 150}ms` }}
-                    className="animate-[pop_400ms_ease-out_backwards] flex items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-left"
+                    className="card elev-sm flex animate-[stPop_400ms_ease-out_backwards] flex-row items-center gap-3 px-4 py-3 text-left"
                   >
                     <span className="text-3xl" aria-hidden="true">
                       {typ.icon}
                     </span>
                     <span>
-                      <span className="block font-semibold text-zinc-900">
+                      <span className="card-title block">
                         {typ.kid_name ?? typ.name_de}
                       </span>
                       {typ.kid_description && (
-                        <span className="block text-xs text-zinc-600">
+                        <span className="card-body block">
                           {typ.kid_description}
                         </span>
                       )}
@@ -341,12 +329,12 @@ export function CheckinFlow({
               </div>
             </>
           ) : (
-            <p className="text-base text-zinc-700">Danke, dass du vorbeigeschaut hast! 👋</p>
+            <p className="text-base">Danke, dass du vorbeigeschaut hast! 👋</p>
           )}
           <button
             type="button"
             onClick={() => setSchritt("foto-angebot")}
-            className="h-11 rounded-xl bg-orange-500 px-6 text-sm font-semibold text-white"
+            className="btn btn-primary"
           >
             Weiter
           </button>
@@ -355,7 +343,7 @@ export function CheckinFlow({
 
       {schritt === "foto-angebot" && (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-          <p className="text-base text-zinc-700">Magst du noch ein Foto hinzufügen?</p>
+          <p className="text-base">Magst du noch ein Foto hinzufügen?</p>
           <input
             ref={fotoInputRef}
             type="file"
@@ -368,9 +356,11 @@ export function CheckinFlow({
             }}
           />
           {fotoStatus === "fertig" ? (
-            <p className="text-sm text-green-700">Danke fürs Foto!</p>
+            <p className="text-sm" style={{ color: "var(--color-accent-2-700)" }}>
+              Danke fürs Foto!
+            </p>
           ) : fotoStatus === "fehler" ? (
-            <p className="text-sm text-red-600">
+            <p className="text-sm" style={{ color: "var(--color-accent-700)" }}>
               Das Foto konnte nicht hochgeladen werden.
             </p>
           ) : (
@@ -378,16 +368,12 @@ export function CheckinFlow({
               type="button"
               disabled={fotoStatus === "laedt"}
               onClick={() => fotoInputRef.current?.click()}
-              className="h-11 rounded-xl bg-orange-500 px-6 text-sm font-semibold text-white disabled:opacity-60"
+              className="btn btn-primary"
             >
               {fotoStatus === "laedt" ? "Wird hochgeladen …" : "Foto auswählen"}
             </button>
           )}
-          <button
-            type="button"
-            onClick={schliessen}
-            className="text-sm font-medium text-zinc-500"
-          >
+          <button type="button" onClick={schliessen} className="btn btn-ghost text-sm">
             {fotoStatus === "fertig" ? "Fertig" : "Überspringen"}
           </button>
         </div>
@@ -412,11 +398,12 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={aktiv}
-      className={`flex h-10 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors ${
+      className="btn"
+      style={
         aktiv
-          ? "border-orange-500 bg-orange-50 text-orange-700"
-          : "border-zinc-200 bg-white text-zinc-700"
-      }`}
+          ? { background: "var(--color-accent-100)", color: "var(--color-accent-800)", border: "1px solid var(--color-accent-300)" }
+          : { border: "1px solid var(--color-divider)" }
+      }
     >
       <span aria-hidden="true">{icon}</span>
       {name}
@@ -442,7 +429,7 @@ function PinKorrektur({
 
   if (!start) {
     return (
-      <div className="flex flex-1 items-center justify-center p-6 text-sm text-zinc-600">
+      <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted">
         Einen Moment …
       </div>
     );

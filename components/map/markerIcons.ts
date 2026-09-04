@@ -3,13 +3,17 @@
 // circle-stroke kann keine gestrichelte Linie - für unbestätigte
 // Open-Data-Orte brauchen wir aber genau das (gestrichelter Umriss).
 //
+// Stil "Ring mit Fahrzeug-Icon": heller Kreis mit farbigem Ring statt
+// voller Füllung, Kran-Silhouette in der Mitte statt reinem Punkt.
+//
 // Es gibt 8 Kombinationen: Farbe (frisch/alt) × Rand (voll/gestrichelt) ×
 // Aktivitäts-Punkt (an/aus). Jede wird einmal pro Kartensitzung gezeichnet
 // und über map.addImage() als "iconKey" verfügbar gemacht.
 import type { Map as MapLibreMap } from "maplibre-gl";
 
-const GRAU = "#9CA3AF"; // neutrales Grau für "keine frische Sichtung" - keine Kategoriefarbe, sondern ein Datenzustand
-const AKTIV_PUNKT = "#22C55E"; // Status-Grün für "gerade in Arbeitszeiten" - ebenfalls kategorieunabhängig
+const GRAU = "#a19786"; // --color-neutral-500: "keine frische Sichtung" - keine Kategoriefarbe, sondern ein Datenzustand
+const RING_GRUND = "#f9f4ed"; // --color-neutral-100: helle Ringfüllung, unabhängig von der Kategoriefarbe
+const AKTIV_PUNKT = "#8fa073"; // --color-accent-2-500: Status-Grün für "gerade in Arbeitszeiten"
 
 type IconVariante = {
   farbig: boolean;
@@ -69,23 +73,21 @@ function zeichneIcon(opts: {
 
   ctx.beginPath();
   ctx.arc(mitte, mitte, radius, 0, Math.PI * 2);
+  ctx.fillStyle = RING_GRUND;
+  ctx.fill();
 
   if (opts.gestrichelt) {
-    // Unbestätigter Open-Data-Ort: hohler Kreis, gestrichelter Rand.
     ctx.setLineDash([5, 4]);
     ctx.lineWidth = 3.5;
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.fill();
-    ctx.strokeStyle = opts.farbe;
-    ctx.stroke();
   } else {
-    // Normalfall: gefüllter Kreis mit weißem Rand für Kontrast auf der Karte.
-    ctx.fillStyle = opts.farbe;
-    ctx.fill();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = "rgba(255,255,255,0.9)";
-    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.lineWidth = 4;
   }
+  ctx.strokeStyle = opts.farbe;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  zeichneKranSilhouette(ctx, mitte, mitte, radius * 0.62, opts.farbe);
 
   if (opts.zeigePunkt) {
     const punktRadius = 6;
@@ -101,4 +103,47 @@ function zeichneIcon(opts: {
   }
 
   return ctx.getImageData(0, 0, size, size);
+}
+
+// Minimalistische Turmdrehkran-Silhouette - passt zu keiner einzelnen
+// Fahrzeugmeldung, sondern steht generisch für "Baustelle" auf der Karte.
+function zeichneKranSilhouette(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  s: number,
+  farbe: string,
+) {
+  ctx.strokeStyle = farbe;
+  ctx.fillStyle = farbe;
+  ctx.lineWidth = Math.max(1.5, s * 0.14);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  const maststart = { x: cx - s * 0.05, y: cy + s * 0.85 };
+  const mastende = { x: cx - s * 0.05, y: cy - s * 0.55 };
+
+  ctx.beginPath();
+  ctx.moveTo(maststart.x, maststart.y);
+  ctx.lineTo(mastende.x, mastende.y);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(mastende.x - s * 0.55, mastende.y + s * 0.12);
+  ctx.lineTo(mastende.x + s * 0.75, mastende.y);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(mastende.x, mastende.y);
+  ctx.lineTo(mastende.x - s * 0.4, mastende.y + s * 0.32);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(mastende.x + s * 0.55, mastende.y + s * 0.06);
+  ctx.lineTo(mastende.x + s * 0.55, mastende.y + s * 0.5);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(mastende.x + s * 0.55, mastende.y + s * 0.58, s * 0.09, 0, Math.PI * 2);
+  ctx.fill();
 }

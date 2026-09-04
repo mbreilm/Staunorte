@@ -21,7 +21,7 @@ const STANDARD_LAT = Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? "48.1372");
 const STANDARD_LON = Number(process.env.NEXT_PUBLIC_DEFAULT_LON ?? "11.5756");
 const KATEGORIE = process.env.NEXT_PUBLIC_DEFAULT_CATEGORY || "baustelle";
 // Notfall-Fallback, nur falls place_categories.marker_style keine Farbe hat.
-const NOTFALL_AKZENTFARBE = "#F2A20C";
+const NOTFALL_AKZENTFARBE = "#c67139";
 // Notfall-Fallback für observable_label - bewusst neutral, keine
 // Kategoriesprache (CLAUDE.md Regel 2), nur falls die Abfrage fehlschlägt.
 const NOTFALL_BEOBACHTUNGSLABEL = "Beobachtungen";
@@ -327,10 +327,10 @@ export function MapView() {
       <Link
         href="/neu"
         aria-label="Ort erfassen"
-        className="fixed z-30 flex h-14 w-14 items-center justify-center rounded-full bg-orange-500 text-3xl leading-none text-white shadow-lg transition-colors hover:bg-orange-600"
+        className="btn btn-primary elev-lg fixed z-30 flex h-14 w-14 items-center justify-center text-3xl leading-none"
         style={{
           right: "1rem",
-          bottom: "max(1rem, env(safe-area-inset-bottom))",
+          bottom: "max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem))",
         }}
       >
         +

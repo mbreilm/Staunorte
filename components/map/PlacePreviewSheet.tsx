@@ -17,10 +17,10 @@ const AKTIVITAETS_TEXT: Record<ActivityState, string> = {
   unbekannt: "Aktivität unbekannt",
 };
 
-const AKTIVITAETS_FARBE: Record<ActivityState, string> = {
-  aktiv: "bg-green-100 text-green-800",
-  ruhe: "bg-zinc-100 text-zinc-600",
-  unbekannt: "bg-zinc-100 text-zinc-400",
+const AKTIVITAETS_KLASSE: Record<ActivityState, string> = {
+  aktiv: "tag tag-accent-2",
+  ruhe: "tag tag-neutral",
+  unbekannt: "tag tag-neutral",
 };
 
 // Ab dieser Zieh-Distanz (px) schließt das Sheet statt zurückzuschnappen.
@@ -69,7 +69,7 @@ export function PlacePreviewSheet({ ort, beobachtungsLabel, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
       <button
         type="button"
         aria-label="Schließen"
@@ -77,7 +77,7 @@ export function PlacePreviewSheet({ ort, beobachtungsLabel, onClose }: Props) {
         className="absolute inset-0 bg-black/40"
       />
       <div
-        className="relative z-10 w-full max-w-md rounded-t-3xl bg-white shadow-xl"
+        className="dialog elev-lg relative z-10 w-full max-w-md gap-0 rounded-b-none p-0"
         style={{
           transform: `translateY(${dragY}px)`,
           transition: ziehtGerade ? "none" : "transform 200ms ease-out",
@@ -93,12 +93,16 @@ export function PlacePreviewSheet({ ort, beobachtungsLabel, onClose }: Props) {
         >
           <div
             aria-hidden="true"
-            className="h-1.5 w-12 rounded-full bg-zinc-200"
+            className="h-1.5 w-12 rounded-full"
+            style={{ background: "var(--color-neutral-400)" }}
           />
         </div>
 
         <div className="px-6">
-          <div className="aspect-video w-full overflow-hidden rounded-2xl bg-zinc-100">
+          <div
+            className="aspect-video w-full overflow-hidden rounded-2xl"
+            style={{ background: "var(--color-neutral-200)" }}
+          >
             {fotoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration
               <img
@@ -107,7 +111,10 @@ export function PlacePreviewSheet({ ort, beobachtungsLabel, onClose }: Props) {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-zinc-300">
+              <div
+                className="flex h-full w-full items-center justify-center"
+                style={{ color: "var(--color-neutral-400)" }}
+              >
                 <svg
                   width="40"
                   height="40"
@@ -137,34 +144,29 @@ export function PlacePreviewSheet({ ort, beobachtungsLabel, onClose }: Props) {
             )}
           </div>
 
-          <h2 className="mt-4 text-lg font-bold text-zinc-900">{ort.title}</h2>
+          <h2 className="mt-4 text-lg">{ort.title}</h2>
 
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-zinc-500">{formatDistance(ort.distance_m)}</span>
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${AKTIVITAETS_FARBE[ort.activity]}`}
-            >
+            <span className="text-muted">{formatDistance(ort.distance_m)}</span>
+            <span className={AKTIVITAETS_KLASSE[ort.activity]}>
               {AKTIVITAETS_TEXT[ort.activity]}
             </span>
           </div>
 
-          <p className="mt-2 text-sm text-zinc-600">
+          <p className="mt-2 text-sm text-muted">
             {ort.fresh_observables} aktuelle {beobachtungsLabel} · {ort.checkin_count}{" "}
             Check-ins
           </p>
 
           <div className="mt-5 flex gap-2">
-            <Link
-              href={`/ort/${ort.id}`}
-              className="flex h-11 flex-1 items-center justify-center rounded-xl bg-orange-500 text-sm font-semibold text-white transition-colors hover:bg-orange-600"
-            >
+            <Link href={`/ort/${ort.id}`} className="btn btn-primary flex-1">
               Details
             </Link>
             <a
               href={buildRouteUrl(ort.lat, ort.lon)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-11 flex-1 items-center justify-center rounded-xl bg-zinc-100 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-200"
+              className="btn btn-secondary flex-1"
             >
               Route öffnen
             </a>
