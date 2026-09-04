@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ObservableType, ObservableRarity } from "@/lib/supabase/types";
+import { trackEvent } from "@/lib/analytics/plausible";
 
 const SELTENHEIT_TEXT: Record<ObservableRarity, string> = {
   haeufig: "Häufig",
@@ -24,6 +25,11 @@ type Props = {
 
 export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
   const [ausgewaehlt, setAusgewaehlt] = useState<ObservableType | null>(null);
+
+  useEffect(() => {
+    trackEvent("Album geöffnet");
+  }, []);
+
   const freischaltungNachTyp = new Map(
     freischaltungen.map((f) => [f.observable_type_id, f]),
   );

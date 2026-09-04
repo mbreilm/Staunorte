@@ -6,6 +6,22 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { AuthForm } from "@/components/AuthForm";
 
+function RechtlichesLinks() {
+  return (
+    <div className="flex justify-center gap-4 text-xs text-zinc-400">
+      <Link href="/impressum" className="hover:underline">
+        Impressum
+      </Link>
+      <Link href="/datenschutz" className="hover:underline">
+        Datenschutz
+      </Link>
+      <Link href="/nutzungsbedingungen" className="hover:underline">
+        Nutzungsbedingungen
+      </Link>
+    </div>
+  );
+}
+
 function KontoContent() {
   const { user, isLoading, signOut } = useAuth();
   const searchParams = useSearchParams();
@@ -37,6 +53,7 @@ function KontoContent() {
         <Link href="/" className="text-center text-sm text-zinc-500">
           Zurück zur Karte
         </Link>
+        <RechtlichesLinks />
       </main>
     );
   }
@@ -62,6 +79,7 @@ function KontoContent() {
       <Link href="/" className="text-center text-sm text-zinc-500">
         Zurück zur Karte
       </Link>
+      <RechtlichesLinks />
     </main>
   );
 }

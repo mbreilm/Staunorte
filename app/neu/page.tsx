@@ -19,6 +19,7 @@ import { StandortAuswahl } from "@/components/erfassen/StandortAuswahl";
 import { DuplikatListe } from "@/components/erfassen/DuplikatListe";
 import { FahrzeugChips } from "@/components/erfassen/FahrzeugChips";
 import { ArbeitszeitenAuswahl } from "@/components/arbeitszeiten/ArbeitszeitenAuswahl";
+import { trackEvent } from "@/lib/analytics/plausible";
 
 const STANDARD_LAT = Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? "48.1372");
 const STANDARD_LON = Number(process.env.NEXT_PUBLIC_DEFAULT_LON ?? "11.5756");
@@ -60,6 +61,10 @@ export default function OrtErfassen() {
   const [speichertGerade, setSpeichertGerade] = useState(false);
   const [fotoFortschritt, setFotoFortschritt] = useState<UploadFortschritt | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
+
+  useEffect(() => {
+    trackEvent("Erfassung gestartet");
+  }, []);
 
   // Konto nötig (PRD 6.2) - erscheint erst hier, blockiert also nicht den
   // ersten Eindruck der App an anderer Stelle.
@@ -226,12 +231,13 @@ export default function OrtErfassen() {
     // zusätzliche Rückfrage. Schlägt das aus irgendeinem Grund fehl,
     // blockiert das nicht die Navigation zum neuen Ort.
     if (neueId) {
-      await supabase.rpc("do_checkin", {
+      const { error: checkinFehler } = await supabase.rpc("do_checkin", {
         p_place_id: neueId,
         p_lat: entwurf.lat,
         p_lon: entwurf.lon,
         p_observable_ids: entwurf.ausgewaehlteFahrzeuge,
       });
+      if (!checkinFehler) trackEvent("Check-in abgeschlossen");
     }
 
     // Arbeitszeiten (T10) - erst jetzt möglich, der Ort existiert vorher nicht.
@@ -257,6 +263,7 @@ export default function OrtErfassen() {
       });
     }
 
+    trackEvent("Erfassung abgeschlossen");
     loescheEntwurf();
     router.push(`/ort/${neueId}`);
   }

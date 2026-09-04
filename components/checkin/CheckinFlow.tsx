@@ -9,6 +9,7 @@ import { formatDistance } from "@/lib/geo/distance";
 import { leseExif } from "@/lib/geo/exif";
 import { ladeFotoHoch } from "@/lib/erfassen/fotoUpload";
 import { StandortAuswahl } from "@/components/erfassen/StandortAuswahl";
+import { trackEvent } from "@/lib/analytics/plausible";
 
 type Props = {
   placeId: string;
@@ -135,6 +136,7 @@ export function CheckinFlow({
     }
 
     hatEingecheckt.current = true;
+    trackEvent("Check-in abgeschlossen");
     const freigeschaltet = weitereTypen.filter((typ) =>
       (data?.new_unlocks ?? []).includes(typ.id),
     );
