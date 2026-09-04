@@ -11,6 +11,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { createClient } from "@/lib/supabase/client";
 import type { PlaceNearby } from "@/lib/supabase/types";
 import { haversineMeters } from "@/lib/geo/distance";
+import { richteMaplibreWorkerEin } from "@/lib/maplibre/setup";
 import { registerMarkerIcons, markerIconKey } from "./markerIcons";
 import { LocationHint } from "./LocationHint";
 import { PlacePreviewSheet } from "./PlacePreviewSheet";
@@ -78,6 +79,7 @@ export function MapView() {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    richteMaplibreWorkerEin();
     const supabase = createClient();
 
     // Kategorie-Metadaten laden, bevor Marker gezeichnet werden - Farbe und

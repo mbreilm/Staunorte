@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Map as MapLibreMap, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { richteMaplibreWorkerEin } from "@/lib/maplibre/setup";
 
 type Props = {
   start: { lat: number; lon: number };
@@ -23,6 +24,7 @@ export function StandortAuswahl({ start, onBestaetigt }: Props) {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    richteMaplibreWorkerEin();
     const map = new MapLibreMap({
       container: containerRef.current,
       style: process.env.NEXT_PUBLIC_MAP_STYLE_URL!,
