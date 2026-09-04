@@ -8,6 +8,7 @@ import {
   AKTIVITAETS_FARBE_DETAIL,
 } from "@/lib/format/activity";
 import { CheckinButton } from "@/components/checkin/CheckinButton";
+import { FotoGalerie } from "@/components/place/FotoGalerie";
 import { ArbeitszeitenBearbeitenButton } from "@/components/arbeitszeiten/ArbeitszeitenBearbeitenButton";
 import { formatArbeitszeiten } from "@/lib/format/arbeitszeiten";
 import { leiteMusterAb } from "@/lib/format/activityPattern";
@@ -80,33 +81,21 @@ export default async function OrtDetailSeite({
   const kuerzlich = (beobachtungen ?? []).filter((o) => o.bucket === "kuerzlich");
   const archiv = (beobachtungen ?? []).filter((o) => o.bucket === "archiv");
 
+  const galerieFotos = (fotos ?? []).map((foto) => {
+    const datum = foto.taken_at ?? foto.created_at;
+    return {
+      id: foto.id,
+      url: supabase.storage.from(FOTO_BUCKET).getPublicUrl(foto.storage_path).data
+        .publicUrl,
+      badgeText: istAelterAlsTage(datum, FOTO_ALTER_HINWEIS_TAGE)
+        ? "älteres Foto"
+        : vorZeit(datum),
+    };
+  });
+
   return (
     <main className="flex-1 pb-10">
-      {fotos && fotos.length > 0 && (
-        <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto">
-          {fotos.map((foto) => {
-            const datum = foto.taken_at ?? foto.created_at;
-            const url = supabase.storage
-              .from(FOTO_BUCKET)
-              .getPublicUrl(foto.storage_path).data.publicUrl;
-
-            return (
-              <div
-                key={foto.id}
-                className="relative aspect-[4/3] w-full flex-none snap-start"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration */}
-                <img src={url} alt="" className="h-full w-full object-cover" />
-                <div className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2.5 py-1 text-xs text-white">
-                  {istAelterAlsTage(datum, FOTO_ALTER_HINWEIS_TAGE)
-                    ? "älteres Foto"
-                    : vorZeit(datum)}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {galerieFotos.length > 0 && <FotoGalerie fotos={galerieFotos} />}
 
       <div className="px-6 pt-6">
         <h1 className="text-xl font-bold text-zinc-900">{ort.title}</h1>

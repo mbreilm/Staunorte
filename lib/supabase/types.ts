@@ -616,6 +616,29 @@ export type Database = {
           new_unlocks: string[];
         };
       };
+
+      // Moderation (T12) - alle wirft 'KEIN_ADMIN', wenn profiles.is_admin nicht gesetzt ist.
+      ist_admin: { Args: Record<string, never>; Returns: boolean };
+      admin_meldungen_offen: {
+        Args: Record<string, never>;
+        Returns: {
+          report_id: string;
+          target_type: ReportTargetType;
+          target_id: string;
+          reason: ReportReason;
+          comment: string | null;
+          created_at: string;
+          titel: string | null;
+          foto_pfad: string | null;
+          ersteller_id: string | null;
+        }[];
+      };
+      admin_ort_ausblenden: { Args: { p_place_id: string }; Returns: undefined };
+      admin_ort_loeschen: { Args: { p_place_id: string }; Returns: undefined };
+      admin_foto_ausblenden: { Args: { p_photo_id: string }; Returns: undefined };
+      admin_foto_loeschen: { Args: { p_photo_id: string }; Returns: undefined };
+      admin_meldung_erledigt: { Args: { p_report_id: string }; Returns: undefined };
+      admin_nutzer_sperren: { Args: { p_user_id: string }; Returns: undefined };
     };
   };
 };
