@@ -7,6 +7,7 @@ import {
   AKTIVITAETS_TEXT_DETAIL,
   AKTIVITAETS_FARBE_DETAIL,
 } from "@/lib/format/activity";
+import { CheckinButton } from "@/components/checkin/CheckinButton";
 
 const FOTO_BUCKET = "place-photos";
 const FOTO_ALTER_HINWEIS_TAGE = 90;
@@ -20,7 +21,7 @@ export default async function OrtDetailSeite({
   const { data: ort } = await supabase
     .from("places")
     .select(
-      "id, title, address, note, category_id, checkin_count, status, source, is_confirmed",
+      "id, title, address, note, category_id, checkin_count, status, source, is_confirmed, created_by",
     )
     .eq("id", id)
     .maybeSingle();
@@ -166,12 +167,12 @@ export default async function OrtDetailSeite({
           </div>
         )}
 
-        <button
-          type="button"
-          className="mt-6 h-12 w-full rounded-xl bg-orange-500 text-base font-semibold text-white transition-colors hover:bg-orange-600"
-        >
-          Ich bin hier 👋
-        </button>
+        <CheckinButton
+          placeId={id}
+          categoryId={ort.category_id}
+          erstelltVon={ort.created_by}
+          bereitsGemeldet={beobachtungen ?? []}
+        />
 
         <div className="mt-8 text-center">
           <Link

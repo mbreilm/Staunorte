@@ -544,6 +544,19 @@ export type Database = {
         Returns: number;
       };
 
+      // lat/lon eines bekannten Ortes, für die Pin-Korrektur bei
+      // ZU_WEIT_ENTFERNT im Check-in-Flow (T9).
+      place_location: {
+        Args: { p_place_id: string };
+        Returns: { lat: number; lon: number }[];
+      };
+
+      // Pin-Korrektur durch den Ersteller (RLS wie beim direkten Update).
+      update_place_location: {
+        Args: { p_place_id: string; p_lat: number; p_lon: number };
+        Returns: undefined;
+      };
+
       // Kartenabfrage. p_category default 'baustelle', p_radius_m default 5000.
       places_nearby: {
         Args: {
