@@ -17,27 +17,20 @@ type Props = {
 export function DuplikatListe({ orte, onTrotzdemAnlegen }: Props) {
   return (
     <div className="flex flex-1 flex-col px-6 py-6">
-      <h1 className="text-lg font-bold text-zinc-900">Meinst du diesen Ort?</h1>
-      <p className="mt-1 text-sm text-zinc-600">
+      <h1 className="text-lg">Meinst du diesen Ort?</h1>
+      <p className="mt-1 text-sm text-muted">
         In der Nähe gibt es schon {orte.length === 1 ? "einen Ort" : "diese Orte"}.
       </p>
 
       <ul className="mt-4 flex flex-col gap-2">
         {orte.map((ort) => (
           <li key={ort.id}>
-            <Link
-              href={`/ort/${ort.id}`}
-              className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3"
-            >
+            <Link href={`/ort/${ort.id}`} className="card flex-row items-center justify-between">
               <span>
-                <span className="block text-sm font-semibold text-zinc-900">
-                  {ort.title}
-                </span>
-                <span className="block text-xs text-zinc-500">
-                  {formatDistance(ort.distance_m)} entfernt
-                </span>
+                <span className="card-title block">{ort.title}</span>
+                <span className="card-meta">{formatDistance(ort.distance_m)} entfernt</span>
               </span>
-              <span className="text-sm font-medium text-orange-600">
+              <span className="text-sm font-medium" style={{ color: "var(--color-accent-600)" }}>
                 Stattdessen einchecken →
               </span>
             </Link>
@@ -45,11 +38,7 @@ export function DuplikatListe({ orte, onTrotzdemAnlegen }: Props) {
         ))}
       </ul>
 
-      <button
-        type="button"
-        onClick={onTrotzdemAnlegen}
-        className="mt-6 h-11 w-full rounded-xl text-sm font-medium text-zinc-500"
-      >
+      <button type="button" onClick={onTrotzdemAnlegen} className="btn btn-ghost mt-6 w-full">
         Keiner davon – trotzdem neuen Ort anlegen
       </button>
     </div>

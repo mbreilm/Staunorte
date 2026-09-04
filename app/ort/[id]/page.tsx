@@ -94,7 +94,7 @@ export default async function OrtDetailSeite({
   });
 
   return (
-    <main className="flex-1 pb-28">
+    <main className="flex-1 pb-10">
       {galerieFotos.length > 0 && <FotoGalerie fotos={galerieFotos} />}
 
       <div className="px-6 pt-6">

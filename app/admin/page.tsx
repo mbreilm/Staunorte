@@ -13,7 +13,7 @@ export default async function AdminSeite() {
   if (!profil?.is_admin) {
     return (
       <main className="flex flex-1 items-center justify-center p-6 text-center">
-        <p className="text-sm text-zinc-500">Diese Seite ist nur für Admins.</p>
+        <p className="text-sm text-muted">Diese Seite ist nur für Admins.</p>
       </main>
     );
   }
@@ -22,7 +22,7 @@ export default async function AdminSeite() {
 
   return (
     <main className="flex-1 p-6">
-      <h1 className="text-lg font-bold text-zinc-900">Offene Meldungen</h1>
+      <h1 className="text-lg">Offene Meldungen</h1>
       <MeldungenListe meldungen={meldungen ?? []} />
     </main>
   );

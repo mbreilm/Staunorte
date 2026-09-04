@@ -53,28 +53,20 @@ export function AnalyticsProvider() {
 
       {bereit && consent === null && (
         <div
-          className="fixed inset-x-0 bottom-0 z-50 flex justify-center p-4"
-          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+          className="fixed inset-x-0 z-50 flex justify-center p-4"
+          style={{ bottom: "max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem))" }}
         >
-          <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl">
-            <p className="text-xs text-zinc-600">
+          <div className="dialog elev-lg w-full max-w-md">
+            <p className="dialog-body">
               Wir nutzen datenschutzfreundliche Analyse (Plausible) ohne
               Cookies und ohne personenbezogene Daten, um die App zu
               verbessern.
             </p>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => entscheiden("ja")}
-                className="h-9 flex-1 rounded-lg bg-orange-500 text-xs font-semibold text-white"
-              >
+            <div className="dialog-actions justify-stretch">
+              <button type="button" onClick={() => entscheiden("ja")} className="btn btn-primary flex-1 text-xs">
                 Einverstanden
               </button>
-              <button
-                type="button"
-                onClick={() => entscheiden("nein")}
-                className="h-9 rounded-lg px-3 text-xs font-medium text-zinc-500"
-              >
+              <button type="button" onClick={() => entscheiden("nein")} className="btn btn-ghost text-xs">
                 Ablehnen
               </button>
             </div>

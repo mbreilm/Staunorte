@@ -271,7 +271,7 @@ export default function OrtErfassen() {
   if (schritt === "foto") {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-base text-zinc-700">
+        <p className="text-base">
           Mach ein Foto oder wähl eins aus deiner Galerie, um loszulegen.
         </p>
         <input
@@ -289,7 +289,7 @@ export default function OrtErfassen() {
           type="button"
           disabled={ladeStandort}
           onClick={() => fotoInputRef.current?.click()}
-          className="h-12 w-full max-w-xs rounded-xl bg-orange-500 text-base font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+          className="btn btn-primary h-12 w-full max-w-xs text-base"
         >
           {ladeStandort ? "Einen Moment …" : "Foto auswählen"}
         </button>
@@ -321,21 +321,21 @@ export default function OrtErfassen() {
   // schritt === "formular"
   return (
     <main className="flex-1 px-6 py-6 pb-10">
-      <h1 className="text-lg font-bold text-zinc-900">Ort erfassen</h1>
+      <h1 className="text-lg">Ort erfassen</h1>
 
-      <label className="mt-4 block text-sm font-medium text-zinc-700">
-        Titel
+      <label className="field mt-4 block">
+        <span>Titel</span>
         <input
           type="text"
           value={entwurf.titel}
           onChange={(e) => entwurfAktualisieren({ titel: e.target.value })}
           placeholder={`${kategorieName} …`}
-          className="mt-1 h-11 w-full rounded-xl border border-zinc-200 px-3 text-base text-zinc-900"
+          className="input mt-1"
         />
       </label>
 
       <div className="mt-5">
-        <p className="mb-2 text-sm font-medium text-zinc-700">
+        <p className="mb-2 text-sm font-medium">
           Welche {beobachtungsLabel || "Merkmale"} siehst du?
         </p>
         <FahrzeugChips
@@ -352,13 +352,13 @@ export default function OrtErfassen() {
       </div>
 
       <details className="mt-5">
-        <summary className="cursor-pointer text-sm font-medium text-zinc-500">
+        <summary className="cursor-pointer text-sm font-medium text-muted">
           Mehr Details (optional)
         </summary>
         <div className="mt-3 flex flex-col gap-4">
           {Object.entries(attributSchema).map(([schluessel, feld]) => (
-            <label key={schluessel} className="block text-sm font-medium text-zinc-700">
-              {feld.label}
+            <label key={schluessel} className="field block">
+              <span>{feld.label}</span>
               <select
                 value={entwurf.attribute[schluessel] ?? ""}
                 onChange={(e) => {
@@ -367,7 +367,7 @@ export default function OrtErfassen() {
                   else delete naechsteAttribute[schluessel];
                   entwurfAktualisieren({ attribute: naechsteAttribute });
                 }}
-                className="mt-1 h-11 w-full rounded-xl border border-zinc-200 px-3 text-base text-zinc-900"
+                className="input mt-1"
               >
                 <option value="">Nicht angegeben</option>
                 {feld.values.map((wert) => (
@@ -383,29 +383,33 @@ export default function OrtErfassen() {
             <button
               type="button"
               onClick={() => setZeigeArbeitszeiten(true)}
-              className="text-sm font-medium text-orange-600 underline-offset-2 hover:underline"
+              className="btn btn-ghost text-sm"
             >
               {entwurf.arbeitszeiten ? "Arbeitszeiten ändern" : "Arbeitszeiten festlegen"}
             </button>
             {entwurf.arbeitszeiten && (
-              <p className="mt-1 text-xs text-zinc-500">Arbeitszeiten festgelegt ✓</p>
+              <p className="mt-1 text-xs text-muted">Arbeitszeiten festgelegt ✓</p>
             )}
           </div>
 
-          <label className="block text-sm font-medium text-zinc-700">
-            Notiz
+          <label className="field block">
+            <span>Notiz</span>
             <textarea
               value={entwurf.notiz}
               onChange={(e) => entwurfAktualisieren({ notiz: e.target.value })}
               rows={3}
               placeholder="z. B. guter Blick vom Spielplatz aus"
-              className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-base text-zinc-900"
+              className="input mt-1"
             />
           </label>
         </div>
       </details>
 
-      {fehler && <p className="mt-4 text-sm text-red-600">{fehler}</p>}
+      {fehler && (
+        <p className="mt-4 text-sm" style={{ color: "var(--color-accent-700)" }}>
+          {fehler}
+        </p>
+      )}
 
       <button
         type="button"
@@ -415,7 +419,7 @@ export default function OrtErfassen() {
           speichertGerade
         }
         onClick={speichern}
-        className="mt-6 h-12 w-full rounded-xl bg-orange-500 text-base font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-40"
+        className="btn btn-primary btn-block mt-6 h-12 text-base"
       >
         {fotoSpeicherText(speichertGerade, fotoFortschritt)}
       </button>

@@ -33,7 +33,7 @@ export function StandortAuswahl({ start, onBestaetigt }: Props) {
       attributionControl: { compact: true },
     });
 
-    const marker = new Marker({ draggable: true, color: "#F2A20C" })
+    const marker = new Marker({ draggable: true, color: "#c67139" })
       .setLngLat([start.lon, start.lat])
       .addTo(map);
 
@@ -63,15 +63,14 @@ export function StandortAuswahl({ start, onBestaetigt }: Props) {
           style={{ position: "absolute", inset: 0 }}
         />
       </div>
-      <div className="p-4" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
-        <p className="mb-2 text-center text-sm text-zinc-600">
+      <div
+        className="bg-[var(--color-bg)] p-4"
+        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+      >
+        <p className="mb-2 text-center text-sm text-muted">
           Stimmt der Pin? Zum Verschieben ziehen oder auf die Karte tippen.
         </p>
-        <button
-          type="button"
-          onClick={() => onBestaetigt(positionRef.current)}
-          className="h-12 w-full rounded-xl bg-orange-500 text-base font-semibold text-white transition-colors hover:bg-orange-600"
-        >
+        <button type="button" onClick={() => onBestaetigt(positionRef.current)} className="btn btn-primary btn-block h-12 text-base">
           Standort bestätigen
         </button>
       </div>

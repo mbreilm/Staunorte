@@ -25,9 +25,7 @@ export function FahrzeugChips({ typen, ausgewaehlt, onToggle }: Props) {
     <div className="flex flex-col gap-4">
       {[...gruppen.entries()].map(([gruppe, gruppenTypen]) => (
         <div key={gruppe}>
-          {gruppe && (
-            <p className="mb-2 text-xs font-medium text-zinc-500">{gruppe}</p>
-          )}
+          {gruppe && <p className="card-kicker mb-2">{gruppe}</p>}
           <div className="flex flex-wrap gap-2">
             {gruppenTypen.map((typ) => {
               const aktiv = ausgewaehlt.includes(typ.id);
@@ -37,11 +35,12 @@ export function FahrzeugChips({ typen, ausgewaehlt, onToggle }: Props) {
                   type="button"
                   onClick={() => onToggle(typ.id)}
                   aria-pressed={aktiv}
-                  className={`flex h-10 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors ${
+                  className="btn"
+                  style={
                     aktiv
-                      ? "border-orange-500 bg-orange-50 text-orange-700"
-                      : "border-zinc-200 bg-white text-zinc-700"
-                  }`}
+                      ? { background: "var(--color-accent-100)", color: "var(--color-accent-800)", border: "1px solid var(--color-accent-300)" }
+                      : { border: "1px solid var(--color-divider)" }
+                  }
                 >
                   <span aria-hidden="true">{typ.icon}</span>
                   {typ.name_de}
