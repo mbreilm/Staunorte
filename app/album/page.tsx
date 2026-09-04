@@ -26,7 +26,7 @@ export default async function AlbumSeite() {
     : { data: null };
 
   return (
-    <main className="flex-1 px-6 py-6 pb-10">
+    <main className="flex-1 px-6 py-6 pb-28">
       <AlbumGrid
         typen={typen ?? []}
         freischaltungen={freischaltungen ?? []}

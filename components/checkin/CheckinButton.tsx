@@ -28,7 +28,7 @@ export function CheckinButton({
       <button
         type="button"
         onClick={() => setOffen(true)}
-        className="mt-6 h-12 w-full rounded-xl bg-orange-500 text-base font-semibold text-white transition-colors hover:bg-orange-600"
+        className="btn btn-primary btn-block h-12 text-base"
       >
         Ich bin hier 👋
       </button>

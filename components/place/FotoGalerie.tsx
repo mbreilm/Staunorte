@@ -39,7 +39,7 @@ export function FotoGalerie({ fotos }: { fotos: Foto[] }) {
             onClick={() => setMeldeFotoId(null)}
             className="absolute inset-0 bg-black/40"
           />
-          <div className="relative z-10 max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white shadow-xl">
+          <div className="elev-lg relative z-10 max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-[var(--color-surface)]">
             <MeldeFormular
               targetType="photo"
               targetId={meldeFotoId}

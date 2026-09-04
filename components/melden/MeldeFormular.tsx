@@ -57,12 +57,8 @@ export function MeldeFormular({ targetType, targetId, onFertig }: Props) {
   if (gesendet) {
     return (
       <div className="flex flex-col items-center gap-4 p-6 text-center">
-        <p className="text-base text-zinc-700">Danke, wir schauen uns das an.</p>
-        <button
-          type="button"
-          onClick={onFertig}
-          className="text-sm font-medium text-orange-600"
-        >
+        <p className="text-base">Danke, wir schauen uns das an.</p>
+        <button type="button" onClick={onFertig} className="btn btn-ghost">
           Fertig
         </button>
       </div>
@@ -71,7 +67,7 @@ export function MeldeFormular({ targetType, targetId, onFertig }: Props) {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <h1 className="text-lg font-bold text-zinc-900">Was stimmt nicht?</h1>
+      <h1 className="text-lg">Was stimmt nicht?</h1>
 
       <div className="flex flex-col gap-2">
         {GRUENDE.map((g) => (
@@ -80,11 +76,12 @@ export function MeldeFormular({ targetType, targetId, onFertig }: Props) {
             type="button"
             onClick={() => setGrund(g.wert)}
             aria-pressed={grund === g.wert}
-            className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors ${
+            className="btn justify-start text-left"
+            style={
               grund === g.wert
-                ? "border-orange-500 bg-orange-50 text-orange-700"
-                : "border-zinc-200 text-zinc-700"
-            }`}
+                ? { background: "var(--color-accent-100)", color: "var(--color-accent-800)", border: "1px solid var(--color-accent-300)" }
+                : { border: "1px solid var(--color-divider)" }
+            }
           >
             {g.text}
           </button>
@@ -96,24 +93,24 @@ export function MeldeFormular({ targetType, targetId, onFertig }: Props) {
         onChange={(e) => setKommentar(e.target.value)}
         rows={3}
         placeholder="Möchtest du noch etwas dazu sagen? (optional)"
-        className="rounded-xl border border-zinc-200 px-3 py-2 text-base text-zinc-900"
+        className="input"
       />
 
-      {fehler && <p className="text-sm text-red-600">{fehler}</p>}
+      {fehler && (
+        <p className="text-sm" style={{ color: "var(--color-accent-700)" }}>
+          {fehler}
+        </p>
+      )}
 
       <button
         type="button"
         disabled={!grund || sendetGerade}
         onClick={absenden}
-        className="h-12 w-full rounded-xl bg-orange-500 text-base font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-40"
+        className="btn btn-primary btn-block h-12 text-base"
       >
         {sendetGerade ? "Wird gesendet …" : "Melden"}
       </button>
-      <button
-        type="button"
-        onClick={onFertig}
-        className="text-sm font-medium text-zinc-500"
-      >
+      <button type="button" onClick={onFertig} className="btn btn-ghost">
         Abbrechen
       </button>
     </div>

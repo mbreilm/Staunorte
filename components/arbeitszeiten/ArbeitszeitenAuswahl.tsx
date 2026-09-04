@@ -32,8 +32,8 @@ export function ArbeitszeitenAuswahl({ onAuswahl, onAbbrechen }: Props) {
 
   if (zeigeEigene) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-white p-6">
-        <h1 className="text-lg font-bold text-zinc-900">Eigene Zeiten</h1>
+      <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-bg)] p-6">
+        <h1 className="text-lg">Eigene Zeiten</h1>
 
         <div className="mt-4 flex gap-2">
           {WOCHENTAG_KUERZEL.map((kuerzel, tag) => {
@@ -48,9 +48,12 @@ export function ArbeitszeitenAuswahl({ onAuswahl, onAbbrechen }: Props) {
                     aktiv ? vorher.filter((t) => t !== tag) : [...vorher, tag].sort(),
                   )
                 }
-                className={`h-10 w-10 rounded-full text-sm font-medium transition-colors ${
-                  aktiv ? "bg-orange-500 text-white" : "bg-zinc-100 text-zinc-600"
-                }`}
+                className="btn h-10 w-10 p-0 text-sm"
+                style={
+                  aktiv
+                    ? { background: "var(--color-accent)", color: "var(--color-bg)" }
+                    : { background: "var(--color-surface)" }
+                }
               >
                 {kuerzel}
               </button>
@@ -59,22 +62,22 @@ export function ArbeitszeitenAuswahl({ onAuswahl, onAbbrechen }: Props) {
         </div>
 
         <div className="mt-5 flex items-center gap-3">
-          <label className="text-sm font-medium text-zinc-700">
-            Von
+          <label className="field text-sm">
+            <span>Von</span>
             <input
               type="time"
               value={von}
               onChange={(e) => setVon(e.target.value)}
-              className="mt-1 block h-11 rounded-xl border border-zinc-200 px-3 text-base text-zinc-900"
+              className="input mt-1"
             />
           </label>
-          <label className="text-sm font-medium text-zinc-700">
-            Bis
+          <label className="field text-sm">
+            <span>Bis</span>
             <input
               type="time"
               value={bis}
               onChange={(e) => setBis(e.target.value)}
-              className="mt-1 block h-11 rounded-xl border border-zinc-200 px-3 text-base text-zinc-900"
+              className="input mt-1"
             />
           </label>
         </div>
@@ -90,15 +93,11 @@ export function ArbeitszeitenAuswahl({ onAuswahl, onAbbrechen }: Props) {
               endMin: zeitZuMinuten(bis),
             })
           }
-          className="mt-6 h-12 w-full rounded-xl bg-orange-500 text-base font-semibold text-white disabled:opacity-40"
+          className="btn btn-primary btn-block h-12 text-base"
         >
           Übernehmen
         </button>
-        <button
-          type="button"
-          onClick={() => setZeigeEigene(false)}
-          className="mt-3 text-sm font-medium text-zinc-500"
-        >
+        <button type="button" onClick={() => setZeigeEigene(false)} className="btn btn-ghost mt-3">
           Zurück
         </button>
       </div>
@@ -106,8 +105,8 @@ export function ArbeitszeitenAuswahl({ onAuswahl, onAbbrechen }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white p-6">
-      <h1 className="text-lg font-bold text-zinc-900">Wie sind die Arbeitszeiten?</h1>
+    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-bg)] p-6">
+      <h1 className="text-lg">Wie sind die Arbeitszeiten?</h1>
 
       <div className="mt-4 flex flex-col gap-3">
         {PRESET_KACHELN.map((kachel) => (
@@ -115,36 +114,24 @@ export function ArbeitszeitenAuswahl({ onAuswahl, onAbbrechen }: Props) {
             key={kachel.preset}
             type="button"
             onClick={() => onAuswahl({ preset: kachel.preset })}
-            className="relative rounded-2xl border border-zinc-200 px-4 py-4 text-left transition-colors hover:border-orange-300"
+            className="card relative gap-0 px-4 py-4 text-left"
           >
-            {kachel.empfohlen && (
-              <span className="absolute right-4 top-4 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
-                Empfohlen
-              </span>
-            )}
-            <span className="block text-base font-semibold text-zinc-900">
-              {kachel.titel}
-            </span>
-            {kachel.untertitel && (
-              <span className="mt-0.5 block text-sm text-zinc-500">{kachel.untertitel}</span>
-            )}
+            {kachel.empfohlen && <span className="tag tag-accent absolute right-4 top-4">Empfohlen</span>}
+            <span className="card-title block">{kachel.titel}</span>
+            {kachel.untertitel && <span className="card-body mt-0.5 block">{kachel.untertitel}</span>}
           </button>
         ))}
 
         <button
           type="button"
           onClick={() => setZeigeEigene(true)}
-          className="rounded-2xl border border-zinc-200 px-4 py-4 text-left transition-colors hover:border-orange-300"
+          className="card gap-0 px-4 py-4 text-left"
         >
-          <span className="block text-base font-semibold text-zinc-900">Eigene Zeiten</span>
+          <span className="card-title block">Eigene Zeiten</span>
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={onAbbrechen}
-        className="mt-6 text-sm font-medium text-zinc-500"
-      >
+      <button type="button" onClick={onAbbrechen} className="btn btn-ghost mt-6">
         Weiß ich nicht
       </button>
     </div>

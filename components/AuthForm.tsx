@@ -65,8 +65,11 @@ export function AuthForm({ redirectPath = "/" }: Props) {
 
   if (status === "sent") {
     return (
-      <div className="rounded-2xl bg-orange-50 p-4 text-sm text-orange-900">
-        <p className="font-medium">Fast geschafft!</p>
+      <div
+        className="rounded-2xl p-4 text-sm"
+        style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)" }}
+      >
+        <p className="font-semibold">Fast geschafft!</p>
         <p className="mt-1">
           Wir haben dir einen Anmelde-Link an <strong>{email}</strong>{" "}
           geschickt. Öffne dein E-Mail-Postfach und tipp auf den Link.
@@ -77,10 +80,8 @@ export function AuthForm({ redirectPath = "/" }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <form onSubmit={handleMagicLink} className="flex flex-col gap-2">
-        <label htmlFor="email" className="text-sm font-medium text-zinc-700">
-          E-Mail-Adresse
-        </label>
+      <form onSubmit={handleMagicLink} className="field flex flex-col gap-2">
+        <label htmlFor="email">E-Mail-Adresse</label>
         <input
           id="email"
           name="email"
@@ -91,12 +92,12 @@ export function AuthForm({ redirectPath = "/" }: Props) {
           placeholder="du@beispiel.de"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="h-12 rounded-xl border border-zinc-300 px-4 text-base focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+          className="input h-12"
         />
         <button
           type="submit"
           disabled={status === "sending"}
-          className="h-12 rounded-xl bg-orange-500 px-4 text-base font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+          className="btn btn-primary h-12 text-base"
         >
           {status === "sending"
             ? "Link wird verschickt …"
@@ -105,22 +106,22 @@ export function AuthForm({ redirectPath = "/" }: Props) {
       </form>
 
       {status === "error" && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm" style={{ color: "var(--color-accent-700)" }}>
           {errorMessage}
         </p>
       )}
 
-      <div className="flex items-center gap-3 text-xs text-zinc-400">
-        <span className="h-px flex-1 bg-zinc-200" />
+      <div className="flex items-center gap-3 text-xs text-muted">
+        <span className="h-px flex-1" style={{ background: "var(--color-divider)" }} />
         oder
-        <span className="h-px flex-1 bg-zinc-200" />
+        <span className="h-px flex-1" style={{ background: "var(--color-divider)" }} />
       </div>
 
       <button
         type="button"
         onClick={handleGoogle}
         disabled={googleLoading}
-        className="flex h-12 items-center justify-center gap-2 rounded-xl border border-zinc-300 px-4 text-base font-medium text-zinc-800 transition-colors hover:bg-zinc-50 disabled:opacity-60"
+        className="btn btn-secondary h-12 text-base"
       >
         <GoogleIcon />
         Mit Google anmelden

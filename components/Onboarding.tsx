@@ -133,21 +133,17 @@ export function Onboarding() {
 
   if (zeigeOnboarding && kategorie) {
     return (
-      <div className="fixed inset-0 z-[60] flex flex-col bg-white p-6">
+      <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--color-bg)] p-6">
         {schritt === 1 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
             <span className="text-6xl" aria-hidden="true">
               {kategorie.icon}
             </span>
-            <p className="text-base text-zinc-700">
+            <p className="text-base">
               Entdecke {kategorie.namePlural} in deiner Nähe und schau dir an, welche{" "}
               {kategorie.beobachtungsLabel} dort gerade sind.
             </p>
-            <button
-              type="button"
-              onClick={() => setSchritt(2)}
-              className="h-12 rounded-xl bg-orange-500 px-6 text-base font-semibold text-white transition-colors hover:bg-orange-600"
-            >
+            <button type="button" onClick={() => setSchritt(2)} className="btn btn-primary">
               Weiter
             </button>
           </div>
@@ -155,20 +151,21 @@ export function Onboarding() {
 
         {schritt === 2 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <p className="text-base text-zinc-700">{kategorie.sicherheitshinweis}</p>
-            <label className="flex items-center gap-2 text-sm text-zinc-600">
+            <p className="text-base">{kategorie.sicherheitshinweis}</p>
+            <label className="radio">
               <input
                 type="checkbox"
                 checked={sicherheitBestaetigt}
                 onChange={(e) => setSicherheitBestaetigt(e.target.checked)}
               />
+              <span className="dot" />
               Ich habe verstanden
             </label>
             <button
               type="button"
               disabled={!sicherheitBestaetigt}
               onClick={() => setSchritt(3)}
-              className="h-12 rounded-xl bg-orange-500 px-6 text-base font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-40"
+              className="btn btn-primary"
             >
               Weiter
             </button>
@@ -177,22 +174,14 @@ export function Onboarding() {
 
         {schritt === 3 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <p className="text-base text-zinc-700">
+            <p className="text-base">
               Wir zeigen dir gern {kategorie.namePlural} in deiner Nähe. Dafür brauchen
               wir deinen Standort.
             </p>
-            <button
-              type="button"
-              onClick={standortAnfragen}
-              className="h-12 rounded-xl bg-orange-500 px-6 text-base font-semibold text-white transition-colors hover:bg-orange-600"
-            >
+            <button type="button" onClick={standortAnfragen} className="btn btn-primary">
               Standort erlauben
             </button>
-            <button
-              type="button"
-              onClick={onboardingSchliessen}
-              className="text-sm font-medium text-zinc-500"
-            >
+            <button type="button" onClick={onboardingSchliessen} className="btn btn-ghost text-sm">
               Später
             </button>
           </div>
@@ -204,27 +193,19 @@ export function Onboarding() {
   if (zeigeInstallHinweis) {
     return (
       <div
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center p-4"
-        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+        className="pointer-events-none fixed inset-x-0 z-40 flex justify-center p-4"
+        style={{ bottom: "max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem))" }}
       >
-        <div className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl bg-white p-4 shadow-xl">
-          <p className="flex-1 text-xs text-zinc-600">
+        <div className="dialog elev-lg pointer-events-auto w-full max-w-md flex-row items-center gap-3 py-3">
+          <p className="flex-1 text-xs">
             Für schnelleren Zugriff: Zum Home-Bildschirm hinzufügen
           </p>
           {installEvent ? (
-            <button
-              type="button"
-              onClick={installieren}
-              className="text-xs font-semibold text-orange-600"
-            >
+            <button type="button" onClick={installieren} className="btn btn-ghost text-xs">
               Hinzufügen
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={installHinweisSchliessen}
-              className="text-xs font-semibold text-orange-600"
-            >
+            <button type="button" onClick={installHinweisSchliessen} className="btn btn-ghost text-xs">
               OK
             </button>
           )}
@@ -232,7 +213,7 @@ export function Onboarding() {
             type="button"
             onClick={installHinweisSchliessen}
             aria-label="Schließen"
-            className="text-zinc-400"
+            className="btn btn-icon text-muted"
           >
             ×
           </button>

@@ -47,12 +47,12 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
 
   return (
     <>
-      <p className="text-lg font-bold text-zinc-900">
+      <p className="text-lg">
         {freischaltungNachTyp.size} von {typen.length} Fahrzeugen
       </p>
 
       {!angemeldet && (
-        <p className="mt-2 text-sm text-zinc-600">
+        <p className="mt-2 text-sm text-muted">
           Fürs Sammeln brauchst du ein Konto. Ohne Anmeldung siehst du nur, welche
           Fahrzeuge es gibt.
         </p>
@@ -61,10 +61,8 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
       <div className="mt-5 flex flex-col gap-5">
         {[...gruppen.entries()].map(([gruppe, gruppenTypen]) => (
           <div key={gruppe}>
-            {gruppe && (
-              <p className="mb-2 text-xs font-medium text-zinc-500">{gruppe}</p>
-            )}
-            <div className="grid grid-cols-4 gap-2">
+            {gruppe && <p className="card-kicker mb-2">{gruppe}</p>}
+            <div className="grid grid-cols-3 gap-3">
               {gruppenTypen.map((typ) => {
                 const freigeschaltet = angemeldet && freischaltungNachTyp.has(typ.id);
                 return (
@@ -73,9 +71,12 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                     type="button"
                     disabled={!freigeschaltet}
                     onClick={() => setAusgewaehlt(typ)}
-                    className={`flex aspect-square flex-col items-center justify-center rounded-2xl text-3xl ${
-                      freigeschaltet ? "bg-orange-50" : "bg-zinc-100 text-zinc-300"
-                    }`}
+                    className="card elev-sm aspect-square flex-col items-center justify-center gap-0 text-3xl"
+                    style={
+                      freigeschaltet
+                        ? { background: "var(--color-accent-100)" }
+                        : { background: "var(--color-neutral-100)", color: "var(--color-neutral-400)" }
+                    }
                   >
                     {freigeschaltet ? typ.icon : "❓"}
                   </button>
@@ -94,23 +95,22 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
             onClick={() => setAusgewaehlt(null)}
             className="absolute inset-0 bg-black/40"
           />
-          <div className="relative z-10 w-full max-w-md rounded-t-3xl bg-white p-6 pb-8 text-center shadow-xl">
+          <div className="dialog elev-lg relative z-10 w-full max-w-md rounded-b-none p-6 pb-8 text-center">
             <div
               aria-hidden="true"
-              className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-200"
+              className="mx-auto mb-4 h-1.5 w-12 rounded-full"
+              style={{ background: "var(--color-neutral-400)" }}
             />
             <span className="text-6xl">{ausgewaehlt.icon}</span>
-            <h2 className="mt-3 text-lg font-bold text-zinc-900">
-              {ausgewaehlt.kid_name ?? ausgewaehlt.name_de}
-            </h2>
-            <p className="text-sm text-zinc-500">{ausgewaehlt.name_de}</p>
+            <h2 className="mt-3 text-lg">{ausgewaehlt.kid_name ?? ausgewaehlt.name_de}</h2>
+            <p className="text-sm text-muted">{ausgewaehlt.name_de}</p>
             {ausgewaehlt.kid_description && (
-              <p className="mt-3 text-sm text-zinc-700">{ausgewaehlt.kid_description}</p>
+              <p className="mt-3 text-sm">{ausgewaehlt.kid_description}</p>
             )}
-            <p className="mt-3 text-xs font-medium text-orange-600">
+            <p className="tag tag-accent mt-3 inline-flex">
               {SELTENHEIT_TEXT[ausgewaehlt.rarity]}
             </p>
-            <p className="mt-3 text-xs text-zinc-400">
+            <p className="mt-3 text-xs text-muted">
               Zuerst gesehen am{" "}
               {new Date(ausgewaehlteFreischaltung.unlocked_at).toLocaleDateString("de-DE")}
               {ausgewaehlteFreischaltung.places &&

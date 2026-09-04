@@ -11,7 +11,7 @@ export const AKTIVITAETS_TEXT_DETAIL: Record<ActivityState, string> = {
 };
 
 export const AKTIVITAETS_FARBE_DETAIL: Record<ActivityState, string> = {
-  aktiv: "bg-green-100 text-green-800",
-  ruhe: "bg-zinc-100 text-zinc-600",
-  unbekannt: "bg-zinc-100 text-zinc-400",
+  aktiv: "tag tag-accent-2",
+  ruhe: "tag tag-neutral",
+  unbekannt: "tag tag-neutral",
 };

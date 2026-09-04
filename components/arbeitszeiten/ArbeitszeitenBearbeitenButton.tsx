@@ -30,11 +30,7 @@ export function ArbeitszeitenBearbeitenButton({ placeId, hatSchonZeiten }: Props
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOffen(true)}
-        className="text-xs font-medium text-orange-600 underline-offset-2 hover:underline"
-      >
+      <button type="button" onClick={() => setOffen(true)} className="btn btn-ghost text-xs">
         {hatSchonZeiten ? "Arbeitszeiten bearbeiten" : "Arbeitszeiten angeben"}
       </button>
       {offen && !speichertGerade && (

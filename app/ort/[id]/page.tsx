@@ -94,33 +94,29 @@ export default async function OrtDetailSeite({
   });
 
   return (
-    <main className="flex-1 pb-10">
+    <main className="flex-1 pb-28">
       {galerieFotos.length > 0 && <FotoGalerie fotos={galerieFotos} />}
 
       <div className="px-6 pt-6">
-        <h1 className="text-xl font-bold text-zinc-900">{ort.title}</h1>
-        {ort.address && (
-          <p className="mt-1 text-sm text-zinc-500">{ort.address}</p>
-        )}
-        {ort.note && (
-          <p className="mt-3 text-sm text-zinc-700">{ort.note}</p>
-        )}
+        <h1 className="text-xl">{ort.title}</h1>
+        {ort.address && <p className="mt-1 text-sm text-muted">{ort.address}</p>}
+        {ort.note && <p className="mt-3 text-sm">{ort.note}</p>}
 
-        <span
-          className={`mt-4 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${aktivitaetsFarbe}`}
-        >
+        <span className={`mt-4 inline-block ${aktivitaetsFarbe}`}>
           {aktivitaetsText}
         </span>
 
         {(jetztHier.length > 0 || kuerzlich.length > 0 || archiv.length > 0) && (
           <section className="mt-6">
-            <h2 className="text-sm font-semibold text-zinc-900">
+            <h2 className="card-kicker">
               {kategorie?.observable_label ?? "Beobachtungen"}
             </h2>
 
             {jetztHier.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs font-medium text-green-700">Jetzt hier</p>
+                <p className="text-xs font-semibold" style={{ color: "var(--color-accent-2-700)" }}>
+                  Jetzt hier
+                </p>
                 <ul className="mt-1.5 flex flex-col gap-1.5">
                   {jetztHier.map((beobachtung) => (
                     <BeobachtungsZeile key={beobachtung.observable_type_id} beobachtung={beobachtung} />
@@ -145,7 +141,7 @@ export default async function OrtDetailSeite({
 
             {archiv.length > 0 && (
               <details className="mt-3">
-                <summary className="cursor-pointer text-xs font-medium text-zinc-500">
+                <summary className="cursor-pointer text-xs font-medium text-muted">
                   Früher hier gesehen ({archiv.length})
                 </summary>
                 <ul className="mt-1.5 flex flex-col gap-1.5">
@@ -160,20 +156,18 @@ export default async function OrtDetailSeite({
 
         {(angegebeneZeiten || beobachtetesMuster) && (
           <section className="mt-6">
-            <h2 className="text-sm font-semibold text-zinc-900">
-              {kategorie?.hours_label ?? "Arbeitszeiten"}
-            </h2>
+            <h2 className="card-kicker">{kategorie?.hours_label ?? "Arbeitszeiten"}</h2>
             {beobachtetesMuster ? (
               <>
-                <p className="mt-1 text-sm text-zinc-700">{beobachtetesMuster.text}</p>
+                <p className="mt-1 text-sm">{beobachtetesMuster.text}</p>
                 {angegebeneZeiten && (
-                  <p className="mt-0.5 text-xs text-zinc-400">
+                  <p className="mt-0.5 text-xs text-muted">
                     laut Angabe: {angegebeneZeiten}
                   </p>
                 )}
               </>
             ) : (
-              <p className="mt-1 text-sm text-zinc-700">{angegebeneZeiten}</p>
+              <p className="mt-1 text-sm">{angegebeneZeiten}</p>
             )}
             <div className="mt-1.5">
               <ArbeitszeitenBearbeitenButton
@@ -189,7 +183,7 @@ export default async function OrtDetailSeite({
           </div>
         )}
 
-        <p className="mt-6 text-sm text-zinc-600">
+        <p className="mt-6 text-sm text-muted">
           {ort.checkin_count} Check-ins insgesamt
           {typeof checkinsWoche === "number" && (
             <> · {checkinsWoche} diese Woche</>
@@ -197,23 +191,25 @@ export default async function OrtDetailSeite({
         </p>
 
         {kategorie?.safety_notice && (
-          <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
+          <div
+            className="mt-4 rounded-2xl p-4 text-sm"
+            style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)" }}
+          >
             {kategorie.safety_notice}
           </div>
         )}
 
-        <CheckinButton
-          placeId={id}
-          categoryId={ort.category_id}
-          erstelltVon={ort.created_by}
-          bereitsGemeldet={beobachtungen ?? []}
-        />
+        <div className="mt-6">
+          <CheckinButton
+            placeId={id}
+            categoryId={ort.category_id}
+            erstelltVon={ort.created_by}
+            bereitsGemeldet={beobachtungen ?? []}
+          />
+        </div>
 
         <div className="mt-8 text-center">
-          <Link
-            href={`/ort/${id}/melden`}
-            className="text-xs text-zinc-400 underline-offset-2 hover:underline"
-          >
+          <Link href={`/ort/${id}/melden`} className="btn btn-ghost text-xs">
             Diesen Ort melden
           </Link>
         </div>
@@ -230,12 +226,12 @@ function BeobachtungsZeile({
   zeitHinweis?: string;
 }) {
   return (
-    <li className="flex items-center gap-2 text-sm text-zinc-700">
-      <span aria-hidden="true">{beobachtung.icon}</span>
-      <span>{beobachtung.name_de}</span>
-      {zeitHinweis && (
-        <span className="text-xs text-zinc-400">· {zeitHinweis}</span>
-      )}
+    <li className="card flex-row items-center gap-3 px-3 py-2.5 text-sm">
+      <span className="text-xl" aria-hidden="true">
+        {beobachtung.icon}
+      </span>
+      <span className="flex-1">{beobachtung.name_de}</span>
+      {zeitHinweis && <span className="text-xs text-muted">{zeitHinweis}</span>}
     </li>
   );
 }

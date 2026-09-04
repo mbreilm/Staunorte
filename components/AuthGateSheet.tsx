@@ -25,25 +25,20 @@ export function AuthGateSheet({ reason, onClose }: Props) {
         onClick={onClose}
         className="absolute inset-0 bg-black/40"
       />
-      <div className="relative z-10 w-full max-w-md rounded-t-3xl bg-white p-6 pb-8 shadow-xl sm:rounded-3xl">
+      <div className="dialog elev-lg relative z-10 w-full max-w-md rounded-b-none p-6 pb-8 sm:rounded-b-[calc(var(--radius-lg)*1.15)]">
         <div
           aria-hidden="true"
-          className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-200 sm:hidden"
+          className="mx-auto mb-4 h-1.5 w-12 rounded-full sm:hidden"
+          style={{ background: "var(--color-neutral-400)" }}
         />
-        <h2 className="text-lg font-bold text-zinc-900">
-          Dafür brauchst du ein Konto
-        </h2>
-        <p className="mt-1 text-sm text-zinc-600">{reason}</p>
+        <h2 className="dialog-title">Dafür brauchst du ein Konto</h2>
+        <p className="dialog-body mt-1">{reason}</p>
 
         <div className="mt-5">
           <AuthForm />
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-4 w-full text-center text-sm font-medium text-zinc-500"
-        >
+        <button type="button" onClick={onClose} className="btn btn-ghost mt-4 w-full">
           Vielleicht später
         </button>
       </div>
