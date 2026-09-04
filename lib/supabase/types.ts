@@ -537,6 +537,13 @@ export type Database = {
         Returns: ActivityState;
       };
 
+      // Aggregierter Check-in-Zähler seit Wochenbeginn (Europe/Berlin,
+      // Montag) für die Detailseite - einzelne Check-ins bleiben privat.
+      place_checkins_this_week: {
+        Args: { p_place_id: string };
+        Returns: number;
+      };
+
       // Kartenabfrage. p_category default 'baustelle', p_radius_m default 5000.
       places_nearby: {
         Args: {
