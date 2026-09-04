@@ -259,7 +259,17 @@ export function MapView() {
 
   return (
     <div className="relative flex-1">
-      <div ref={containerRef} className="absolute inset-0" />
+      {/* Inline style statt nur Tailwind-Klasse: maplibre-gl.css setzt auf
+          diesem Element ungelayert `.maplibregl-map { position: relative }`.
+          Tailwind v4 packt seine Utilities in ein CSS-Layer, und ungelayertes
+          CSS gewinnt immer gegen gelayertes - unabhängig von Spezifität oder
+          Reihenfolge. Ohne den Inline-Style bricht das die absolute
+          Positionierung und die Karte bekommt Höhe 0. */}
+      <div
+        ref={containerRef}
+        className="absolute inset-0"
+        style={{ position: "absolute", inset: 0 }}
+      />
       {zeigeStandortHinweis && (
         <LocationHint
           onUseLocation={standortVerwenden}
