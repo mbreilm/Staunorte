@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Map as MapLibreMap,
   type GeoJSONSource,
@@ -321,6 +322,17 @@ export function MapView() {
         beobachtungsLabel={beobachtungsLabel}
         onClose={() => setAusgewaehlterOrt(null)}
       />
+      <Link
+        href="/neu"
+        aria-label="Ort erfassen"
+        className="fixed z-30 flex h-14 w-14 items-center justify-center rounded-full bg-orange-500 text-3xl leading-none text-white shadow-lg transition-colors hover:bg-orange-600"
+        style={{
+          right: "1rem",
+          bottom: "max(1rem, env(safe-area-inset-bottom))",
+        }}
+      >
+        +
+      </Link>
     </div>
   );
 }
