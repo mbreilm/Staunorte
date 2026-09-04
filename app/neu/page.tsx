@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import type { ObservableType, PlaceNearby } from "@/lib/supabase/types";
-import { leseExifStandort } from "@/lib/geo/exif";
+import { leseExif, type ExifDaten } from "@/lib/geo/exif";
 import {
   ladeEntwurf,
   speichereEntwurf,
   loescheEntwurf,
   type OrtEntwurf,
 } from "@/lib/erfassen/entwurf";
+import { ladeFotoHoch, type UploadFortschritt } from "@/lib/erfassen/fotoUpload";
 import { StandortAuswahl } from "@/components/erfassen/StandortAuswahl";
 import { DuplikatListe } from "@/components/erfassen/DuplikatListe";
 import { FahrzeugChips } from "@/components/erfassen/FahrzeugChips";
@@ -40,6 +41,8 @@ export default function OrtErfassen() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const fotoInputRef = useRef<HTMLInputElement>(null);
+  const fotoRef = useRef<File | null>(null);
+  const exifDatenRef = useRef<ExifDaten>({ lat: null, lon: null, aufgenommenAm: null });
 
   const [schritt, setSchritt] = useState<Schritt>("foto");
   const [entwurf, setEntwurf] = useState<OrtEntwurf>(ladeEntwurf);
@@ -51,6 +54,7 @@ export default function OrtErfassen() {
   const [beobachtungsLabel, setBeobachtungsLabel] = useState("");
   const [ladeStandort, setLadeStandort] = useState(false);
   const [speichertGerade, setSpeichertGerade] = useState(false);
+  const [fotoFortschritt, setFotoFortschritt] = useState<UploadFortschritt | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
 
   // Konto nötig (PRD 6.2) - erscheint erst hier, blockiert also nicht den
@@ -137,7 +141,12 @@ export default function OrtErfassen() {
   }
 
   async function aufFotoAusgewaehlt(datei: File) {
+    fotoRef.current = datei;
     setLadeStandort(true);
+
+    // EXIF nur einmal lesen - das Datum wird erst beim Upload gebraucht,
+    // die Koordinaten ggf. sofort für den Standort-Schritt.
+    exifDatenRef.current = await leseExif(datei);
 
     if (standortBereitsBekannt && entwurf.lat !== null && entwurf.lon !== null) {
       // Standort schon aus einem früheren Entwurf bekannt - nicht erneut abfragen.
@@ -146,11 +155,11 @@ export default function OrtErfassen() {
       return;
     }
 
-    const exifStandort = await leseExifStandort(datei);
-    if (exifStandort) {
+    const { lat, lon } = exifDatenRef.current;
+    if (lat !== null && lon !== null) {
       setLadeStandort(false);
       setSchritt("standort");
-      entwurfAktualisieren(exifStandort);
+      entwurfAktualisieren({ lat, lon });
       return;
     }
 
@@ -218,6 +227,24 @@ export default function OrtErfassen() {
         p_lat: entwurf.lat,
         p_lon: entwurf.lon,
         p_observable_ids: entwurf.ausgewaehlteFahrzeuge,
+      });
+    }
+
+    // Foto hochladen (T8) - erst jetzt möglich, die RLS-Regel auf
+    // place_photos verlangt einen bestehenden Check-in. Ein Fehlschlag
+    // hier verwirft nicht den bereits angelegten Ort, siehe TICKETS.md T8
+    // ("ohne den ganzen Flow zu verlieren").
+    if (neueId && fotoRef.current && user) {
+      await ladeFotoHoch({
+        datei: fotoRef.current,
+        placeId: neueId,
+        hochgeladenVon: user.id,
+        koordinaten:
+          exifDatenRef.current.lat !== null && exifDatenRef.current.lon !== null
+            ? { lat: exifDatenRef.current.lat, lon: exifDatenRef.current.lon }
+            : null,
+        aufgenommenAm: exifDatenRef.current.aufgenommenAm,
+        aufFortschritt: setFotoFortschritt,
       });
     }
 
@@ -361,8 +388,18 @@ export default function OrtErfassen() {
         onClick={speichern}
         className="mt-6 h-12 w-full rounded-xl bg-orange-500 text-base font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-40"
       >
-        {speichertGerade ? "Wird gespeichert …" : "Ort speichern"}
+        {fotoSpeicherText(speichertGerade, fotoFortschritt)}
       </button>
     </main>
   );
+}
+
+function fotoSpeicherText(
+  speichertGerade: boolean,
+  fotoFortschritt: UploadFortschritt | null,
+): string {
+  if (!speichertGerade) return "Ort speichern";
+  if (fotoFortschritt === "verkleinern") return "Foto wird verkleinert …";
+  if (fotoFortschritt === "hochladen") return "Foto wird hochgeladen …";
+  return "Wird gespeichert …";
 }
