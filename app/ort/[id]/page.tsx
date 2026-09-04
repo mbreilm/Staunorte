@@ -8,6 +8,11 @@ import {
   AKTIVITAETS_FARBE_DETAIL,
 } from "@/lib/format/activity";
 import { CheckinButton } from "@/components/checkin/CheckinButton";
+import { ArbeitszeitenBearbeitenButton } from "@/components/arbeitszeiten/ArbeitszeitenBearbeitenButton";
+import { formatArbeitszeiten } from "@/lib/format/arbeitszeiten";
+import { leiteMusterAb } from "@/lib/format/activityPattern";
+
+const WERTENDE_CHECKINS_FUER_MUSTER = 8;
 
 const FOTO_BUCKET = "place-photos";
 const FOTO_ALTER_HINWEIS_TAGE = 90;
@@ -32,7 +37,7 @@ export default async function OrtDetailSeite({
     await Promise.all([
       supabase
         .from("place_categories")
-        .select("name_singular, safety_notice, observable_label")
+        .select("name_singular, safety_notice, observable_label, hours_label")
         .eq("id", ort.category_id)
         .maybeSingle(),
       supabase.rpc("place_is_active_now", { p_place_id: id }),
@@ -53,6 +58,16 @@ export default async function OrtDetailSeite({
     .select("*")
     .eq("place_id", id)
     .order("last_seen_at", { ascending: false });
+
+  const [{ data: arbeitszeiten }, { data: aktivitaetsMuster }] = await Promise.all([
+    supabase.from("place_hours").select("*").eq("place_id", id),
+    ort.checkin_count >= WERTENDE_CHECKINS_FUER_MUSTER
+      ? supabase.from("place_activity").select("*").eq("place_id", id)
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const angegebeneZeiten = formatArbeitszeiten(arbeitszeiten ?? []);
+  const beobachtetesMuster = aktivitaetsMuster ? leiteMusterAb(aktivitaetsMuster) : null;
 
   const aktivitaetsText = aktivitaet
     ? AKTIVITAETS_TEXT_DETAIL[aktivitaet]
@@ -152,6 +167,37 @@ export default async function OrtDetailSeite({
               </details>
             )}
           </section>
+        )}
+
+        {(angegebeneZeiten || beobachtetesMuster) && (
+          <section className="mt-6">
+            <h2 className="text-sm font-semibold text-zinc-900">
+              {kategorie?.hours_label ?? "Arbeitszeiten"}
+            </h2>
+            {beobachtetesMuster ? (
+              <>
+                <p className="mt-1 text-sm text-zinc-700">{beobachtetesMuster.text}</p>
+                {angegebeneZeiten && (
+                  <p className="mt-0.5 text-xs text-zinc-400">
+                    laut Angabe: {angegebeneZeiten}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-zinc-700">{angegebeneZeiten}</p>
+            )}
+            <div className="mt-1.5">
+              <ArbeitszeitenBearbeitenButton
+                placeId={id}
+                hatSchonZeiten={!!angegebeneZeiten}
+              />
+            </div>
+          </section>
+        )}
+        {!angegebeneZeiten && !beobachtetesMuster && (
+          <div className="mt-6">
+            <ArbeitszeitenBearbeitenButton placeId={id} hatSchonZeiten={false} />
+          </div>
         )}
 
         <p className="mt-6 text-sm text-zinc-600">

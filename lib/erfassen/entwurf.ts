@@ -4,6 +4,8 @@
 // lassen sich nicht sinnvoll in localStorage ablegen, ein Neustart
 // verlangt also ein erneutes Auswählen des Fotos - alle anderen Angaben
 // bleiben erhalten.
+import type { ArbeitszeitenAuswahl } from "@/lib/arbeitszeiten/typen";
+
 const SCHLUESSEL = "baustellenjaeger:ort-entwurf";
 
 export type OrtEntwurf = {
@@ -15,6 +17,8 @@ export type OrtEntwurf = {
   /** Generische Kategorie-Attribute (place_categories.attribute_schema), z. B. { phase: "rohbau" } - keine hartkodierten Felder, siehe CLAUDE.md Regel 1+2. */
   attribute: Record<string, string>;
   ausgewaehlteFahrzeuge: string[];
+  /** Erst nach create_place() als place_hours schreibbar - der Ort existiert vorher noch nicht (T10). */
+  arbeitszeiten: ArbeitszeitenAuswahl | null;
 };
 
 export const LEERER_ENTWURF: OrtEntwurf = {
@@ -25,6 +29,7 @@ export const LEERER_ENTWURF: OrtEntwurf = {
   notiz: "",
   attribute: {},
   ausgewaehlteFahrzeuge: [],
+  arbeitszeiten: null,
 };
 
 export function ladeEntwurf(): OrtEntwurf {

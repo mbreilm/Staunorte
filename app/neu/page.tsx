@@ -13,9 +13,12 @@ import {
   type OrtEntwurf,
 } from "@/lib/erfassen/entwurf";
 import { ladeFotoHoch, type UploadFortschritt } from "@/lib/erfassen/fotoUpload";
+import { baueZeilen } from "@/lib/arbeitszeiten/zeilen";
+import { speicherArbeitszeiten } from "@/lib/arbeitszeiten/speichern";
 import { StandortAuswahl } from "@/components/erfassen/StandortAuswahl";
 import { DuplikatListe } from "@/components/erfassen/DuplikatListe";
 import { FahrzeugChips } from "@/components/erfassen/FahrzeugChips";
+import { ArbeitszeitenAuswahl } from "@/components/arbeitszeiten/ArbeitszeitenAuswahl";
 
 const STANDARD_LAT = Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? "48.1372");
 const STANDARD_LON = Number(process.env.NEXT_PUBLIC_DEFAULT_LON ?? "11.5756");
@@ -49,6 +52,7 @@ export default function OrtErfassen() {
   const [standortBereitsBekannt] = useState(() => ladeEntwurf().lat !== null);
   const [duplikate, setDuplikate] = useState<PlaceNearby[]>([]);
   const [fahrzeugTypen, setFahrzeugTypen] = useState<ObservableType[]>([]);
+  const [zeigeArbeitszeiten, setZeigeArbeitszeiten] = useState(false);
   const [attributSchema, setAttributSchema] = useState<AttributSchema>({});
   const [kategorieName, setKategorieName] = useState("");
   const [beobachtungsLabel, setBeobachtungsLabel] = useState("");
@@ -230,6 +234,11 @@ export default function OrtErfassen() {
       });
     }
 
+    // Arbeitszeiten (T10) - erst jetzt möglich, der Ort existiert vorher nicht.
+    if (neueId && entwurf.arbeitszeiten) {
+      await speicherArbeitszeiten(supabase, neueId, baueZeilen(entwurf.arbeitszeiten));
+    }
+
     // Foto hochladen (T8) - erst jetzt möglich, die RLS-Regel auf
     // place_photos verlangt einen bestehenden Check-in. Ein Fehlschlag
     // hier verwirft nicht den bereits angelegten Ort, siehe TICKETS.md T8
@@ -363,6 +372,19 @@ export default function OrtErfassen() {
             </label>
           ))}
 
+          <div>
+            <button
+              type="button"
+              onClick={() => setZeigeArbeitszeiten(true)}
+              className="text-sm font-medium text-orange-600 underline-offset-2 hover:underline"
+            >
+              {entwurf.arbeitszeiten ? "Arbeitszeiten ändern" : "Arbeitszeiten festlegen"}
+            </button>
+            {entwurf.arbeitszeiten && (
+              <p className="mt-1 text-xs text-zinc-500">Arbeitszeiten festgelegt ✓</p>
+            )}
+          </div>
+
           <label className="block text-sm font-medium text-zinc-700">
             Notiz
             <textarea
@@ -390,6 +412,16 @@ export default function OrtErfassen() {
       >
         {fotoSpeicherText(speichertGerade, fotoFortschritt)}
       </button>
+
+      {zeigeArbeitszeiten && (
+        <ArbeitszeitenAuswahl
+          onAuswahl={(auswahl) => {
+            entwurfAktualisieren({ arbeitszeiten: auswahl });
+            setZeigeArbeitszeiten(false);
+          }}
+          onAbbrechen={() => setZeigeArbeitszeiten(false)}
+        />
+      )}
     </main>
   );
 }
