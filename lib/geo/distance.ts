@@ -19,3 +19,12 @@ export function haversineMeters(a: LatLon, b: LatLon): number {
 
   return 2 * ERDRADIUS_M * Math.asin(Math.sqrt(h));
 }
+
+// Für die Vorschau beim Antippen eines Markers: unter 1 km in ganzen
+// Metern, ab 1 km in Kilometern mit einer Nachkommastelle (deutsches
+// Komma statt Punkt).
+export function formatDistance(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  const km = meters / 1000;
+  return `${km.toFixed(1).replace(".", ",")} km`;
+}

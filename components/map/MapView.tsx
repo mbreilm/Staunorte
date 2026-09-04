@@ -12,6 +12,7 @@ import type { PlaceNearby } from "@/lib/supabase/types";
 import { haversineMeters } from "@/lib/geo/distance";
 import { registerMarkerIcons, markerIconKey } from "./markerIcons";
 import { LocationHint } from "./LocationHint";
+import { PlacePreviewSheet } from "./PlacePreviewSheet";
 
 // Fallback, falls die Env-Variablen mal fehlen - München-Zentrum.
 const STANDARD_LAT = Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? "48.1372");
@@ -19,6 +20,9 @@ const STANDARD_LON = Number(process.env.NEXT_PUBLIC_DEFAULT_LON ?? "11.5756");
 const KATEGORIE = process.env.NEXT_PUBLIC_DEFAULT_CATEGORY || "baustelle";
 // Notfall-Fallback, nur falls place_categories.marker_style keine Farbe hat.
 const NOTFALL_AKZENTFARBE = "#F2A20C";
+// Notfall-Fallback für observable_label - bewusst neutral, keine
+// Kategoriesprache (CLAUDE.md Regel 2), nur falls die Abfrage fehlschlägt.
+const NOTFALL_BEOBACHTUNGSLABEL = "Beobachtungen";
 
 const ENTPRELLUNG_MS = 300;
 const MIN_RADIUS_M = 300;
@@ -61,31 +65,47 @@ export function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const entprellungRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const orteRef = useRef<PlaceNearby[]>([]);
   const [zeigeStandortHinweis, setZeigeStandortHinweis] = useState(false);
+  const [beobachtungsLabel, setBeobachtungsLabel] = useState(
+    NOTFALL_BEOBACHTUNGSLABEL,
+  );
+  const [ausgewaehlterOrt, setAusgewaehlterOrt] = useState<PlaceNearby | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const supabase = createClient();
 
-    // Kategoriefarbe laden, bevor Marker gezeichnet werden - die Farbe ist
-    // Kategorie-Konfiguration (place_categories.marker_style), nicht im
+    // Kategorie-Metadaten laden, bevor Marker gezeichnet werden - Farbe und
+    // Beschriftung sind Kategorie-Konfiguration (place_categories), nicht im
     // Code hartkodiert (CLAUDE.md Regel 2: keine kategoriespezifischen
     // Werte im Frontend). Läuft parallel zum Kartenstil-Laden.
-    async function ladeAkzentfarbe(): Promise<string> {
+    async function ladeKategorie(): Promise<{
+      farbe: string;
+      beobachtungsLabel: string;
+    }> {
       try {
         const { data } = await supabase
           .from("place_categories")
-          .select("marker_style")
+          .select("marker_style, observable_label")
           .eq("id", KATEGORIE)
           .maybeSingle();
         const style = data?.marker_style as { color?: string } | null;
-        return style?.color ?? NOTFALL_AKZENTFARBE;
+        return {
+          farbe: style?.color ?? NOTFALL_AKZENTFARBE,
+          beobachtungsLabel: data?.observable_label ?? NOTFALL_BEOBACHTUNGSLABEL,
+        };
       } catch {
-        return NOTFALL_AKZENTFARBE;
+        return {
+          farbe: NOTFALL_AKZENTFARBE,
+          beobachtungsLabel: NOTFALL_BEOBACHTUNGSLABEL,
+        };
       }
     }
-    const akzentfarbePromise = ladeAkzentfarbe();
+    const kategoriePromise = ladeKategorie();
 
     const map = new MapLibreMap({
       container: containerRef.current,
@@ -131,6 +151,7 @@ export function MapView() {
         return;
       }
 
+      orteRef.current = data ?? [];
       const quelle = map.getSource("orte") as GeoJSONSource | undefined;
       quelle?.setData(baueFeatureCollection(data ?? []));
     }
@@ -143,8 +164,10 @@ export function MapView() {
     }
 
     map.on("load", async () => {
-      const akzentfarbe = await akzentfarbePromise;
+      const kategorie = await kategoriePromise;
+      const akzentfarbe = kategorie.farbe;
       registerMarkerIcons(map, akzentfarbe);
+      setBeobachtungsLabel(kategorie.beobachtungsLabel);
 
       map.addSource("orte", {
         type: "geojson",
@@ -220,6 +243,23 @@ export function MapView() {
         map.getCanvas().style.cursor = "";
       });
 
+      // Tap auf einen einzelnen Ort öffnet die Vorschau (T5). Die vollen
+      // Ortsdaten stehen nicht im GeoJSON (nur id/title/iconKey), sondern
+      // kommen aus orteRef - dem zuletzt geladenen places_nearby()-Ergebnis.
+      map.on("click", "einzelne-orte", (e: MapLayerMouseEvent) => {
+        const id = e.features?.[0]?.properties?.id;
+        if (!id) return;
+        const ort = orteRef.current.find((o) => o.id === id);
+        if (ort) setAusgewaehlterOrt(ort);
+      });
+
+      map.on("mouseenter", "einzelne-orte", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "einzelne-orte", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
       // Standortabfrage erst nach dem erklärenden Hinweis - nicht sofort
       // beim Laden. Die Karte selbst ist zu diesem Zeitpunkt schon
       // benutzbar (Zentrum München/Fallback).
@@ -276,6 +316,11 @@ export function MapView() {
           onDismiss={() => setZeigeStandortHinweis(false)}
         />
       )}
+      <PlacePreviewSheet
+        ort={ausgewaehlterOrt}
+        beobachtungsLabel={beobachtungsLabel}
+        onClose={() => setAusgewaehlterOrt(null)}
+      />
     </div>
   );
 }
