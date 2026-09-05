@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Map as MapLibreMap,
   type GeoJSONSource,
@@ -63,7 +64,15 @@ function baueFeatureCollection(
   };
 }
 
+// Wird dauerhaft in app/layout.tsx gemountet statt pro Seitenaufruf neu
+// erzeugt: die Karte (WebGL-Kontext, Worker, Stil/Sprites/Fonts, Marker-
+// Icons, places_nearby()) wäre bei jedem Tab-Wechsel komplett neu
+// aufzubauen, das machte den Wechsel zwischen Karte und Album spürbar
+// träge. Stattdessen bleibt die Karte immer gemountet und wird beim
+// Verlassen des Karten-Tabs nur unsichtbar geschaltet (nicht entfernt).
 export function MapView() {
+  const pathname = usePathname();
+  const aktiverTab = pathname === "/";
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const entprellungRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -301,7 +310,13 @@ export function MapView() {
   }
 
   return (
-    <div className="relative flex-1">
+    <div
+      className="fixed inset-0"
+      style={{
+        visibility: aktiverTab ? "visible" : "hidden",
+        pointerEvents: aktiverTab ? "auto" : "none",
+      }}
+    >
       {/* Inline style statt nur Tailwind-Klasse: maplibre-gl.css setzt auf
           diesem Element ungelayert `.maplibregl-map { position: relative }`.
           Tailwind v4 packt seine Utilities in ein CSS-Layer, und ungelayertes

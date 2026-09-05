@@ -1,7 +1,6 @@
-import { MapView } from "@/components/map/MapView";
-
-// Startseite: Vollbild-Karte. Die eigentliche Logik steckt in MapView
-// (Client-Komponente, braucht Browser-APIs wie Geolocation und Canvas).
+// Startseite: Vollbild-Karte. MapView ist dauerhaft in app/layout.tsx
+// gemountet (siehe dort) statt hier pro Seitenaufruf neu erzeugt zu werden -
+// diese Seite liefert deshalb keinen eigenen Inhalt mehr.
 export default function KartePage() {
-  return <MapView />;
+  return null;
 }

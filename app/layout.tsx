@@ -3,6 +3,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { Onboarding } from "@/components/Onboarding";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
 import { BottomNav } from "@/components/nav/BottomNav";
+import { MapView } from "@/components/map/MapView";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,6 +30,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="de" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
+        {/* Dauerhaft gemountet (nicht pro Route) - siehe components/map/MapView.tsx. */}
+        <MapView />
         <AuthProvider>{children}</AuthProvider>
         <BottomNav />
         <Onboarding />
