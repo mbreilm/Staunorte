@@ -309,47 +309,66 @@ export function MapView() {
     );
   }
 
+  // Zwei getrennte Wrapper statt einem: `position: fixed` erzeugt in
+  // modernen Browsern IMMER einen eigenen Stacking-Context, unabhängig vom
+  // z-index. Ein einzelner `fixed`-Wrapper um Karte + Sheets/FAB würde deren
+  // z-Index (30/40/50) gegen die BottomNav (z-40) einsperren und dabei als
+  // Ganzes nach DOM-Reihenfolge einsortieren - die BottomNav käme dadurch
+  // immer über das Vorschau-Sheet zu liegen, obwohl dessen z-50 höher ist.
+  // Der Karten-Canvas braucht selbst kein z-Index (bleibt unter der
+  // BottomNav), die Overlay-Elemente stecken deshalb in einem eigenen,
+  // NICHT positionierten Wrapper - der erzeugt keinen Stacking-Context, ihre
+  // z-Index-Werte vergleichen sich also wieder direkt mit dem der BottomNav.
   return (
-    <div
-      className="fixed inset-0"
-      style={{
-        visibility: aktiverTab ? "visible" : "hidden",
-        pointerEvents: aktiverTab ? "auto" : "none",
-      }}
-    >
-      {/* Inline style statt nur Tailwind-Klasse: maplibre-gl.css setzt auf
-          diesem Element ungelayert `.maplibregl-map { position: relative }`.
-          Tailwind v4 packt seine Utilities in ein CSS-Layer, und ungelayertes
-          CSS gewinnt immer gegen gelayertes - unabhängig von Spezifität oder
-          Reihenfolge. Ohne den Inline-Style bricht das die absolute
-          Positionierung und die Karte bekommt Höhe 0. */}
+    <>
       <div
-        ref={containerRef}
-        className="absolute inset-0"
-        style={{ position: "absolute", inset: 0 }}
-      />
-      {zeigeStandortHinweis && (
-        <LocationHint
-          onUseLocation={standortVerwenden}
-          onDismiss={() => setZeigeStandortHinweis(false)}
-        />
-      )}
-      <PlacePreviewSheet
-        ort={ausgewaehlterOrt}
-        beobachtungsLabel={beobachtungsLabel}
-        onClose={() => setAusgewaehlterOrt(null)}
-      />
-      <Link
-        href="/neu"
-        aria-label="Ort erfassen"
-        className="btn btn-primary elev-lg fixed z-30 flex h-14 w-14 items-center justify-center text-3xl leading-none"
+        className="fixed inset-0"
         style={{
-          right: "1rem",
-          bottom: "max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem))",
+          visibility: aktiverTab ? "visible" : "hidden",
+          pointerEvents: aktiverTab ? "auto" : "none",
         }}
       >
-        +
-      </Link>
-    </div>
+        {/* Inline style statt nur Tailwind-Klasse: maplibre-gl.css setzt auf
+            diesem Element ungelayert `.maplibregl-map { position: relative }`.
+            Tailwind v4 packt seine Utilities in ein CSS-Layer, und ungelayertes
+            CSS gewinnt immer gegen gelayertes - unabhängig von Spezifität oder
+            Reihenfolge. Ohne den Inline-Style bricht das die absolute
+            Positionierung und die Karte bekommt Höhe 0. */}
+        <div
+          ref={containerRef}
+          className="absolute inset-0"
+          style={{ position: "absolute", inset: 0 }}
+        />
+      </div>
+      <div
+        style={{
+          visibility: aktiverTab ? "visible" : "hidden",
+          pointerEvents: aktiverTab ? "auto" : "none",
+        }}
+      >
+        {zeigeStandortHinweis && (
+          <LocationHint
+            onUseLocation={standortVerwenden}
+            onDismiss={() => setZeigeStandortHinweis(false)}
+          />
+        )}
+        <PlacePreviewSheet
+          ort={ausgewaehlterOrt}
+          beobachtungsLabel={beobachtungsLabel}
+          onClose={() => setAusgewaehlterOrt(null)}
+        />
+        <Link
+          href="/neu"
+          aria-label="Ort erfassen"
+          className="btn btn-primary elev-lg fixed z-30 flex h-14 w-14 items-center justify-center text-3xl leading-none"
+          style={{
+            right: "1rem",
+            bottom: "max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem))",
+          }}
+        >
+          +
+        </Link>
+      </div>
+    </>
   );
 }
