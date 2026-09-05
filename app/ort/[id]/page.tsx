@@ -95,6 +95,12 @@ export default async function OrtDetailSeite({
 
   return (
     <main className="flex-1 pb-10">
+      <div className="flex items-center px-4 pt-4">
+        <Link href="/" aria-label="Zurück zur Karte" className="btn btn-icon">
+          <ZurueckPfeil />
+        </Link>
+      </div>
+
       {galerieFotos.length > 0 && <FotoGalerie fotos={galerieFotos} />}
 
       <div className="px-6 pt-6">
@@ -233,5 +239,19 @@ function BeobachtungsZeile({
       <span className="flex-1">{beobachtung.name_de}</span>
       {zeitHinweis && <span className="text-xs text-muted">{zeitHinweis}</span>}
     </li>
+  );
+}
+
+function ZurueckPfeil() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M15 5l-7 7 7 7"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
