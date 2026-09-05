@@ -95,9 +95,18 @@ export function PlacePreviewSheet({ ort, beobachtungsLabel, onClose }: Props) {
 
         <div className="px-6">
           <div
-            className="aspect-video w-full overflow-hidden rounded-2xl"
+            className="relative aspect-video w-full overflow-hidden rounded-2xl"
             style={{ background: "var(--color-neutral-200)" }}
           >
+            <button
+              type="button"
+              aria-label="Schließen"
+              onClick={onClose}
+              className="btn btn-icon elev-sm absolute right-2 top-2 text-lg"
+              style={{ background: "var(--color-bg)" }}
+            >
+              ×
+            </button>
             {fotoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration
               <img

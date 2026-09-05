@@ -4,10 +4,13 @@ import { useEffect, useRef } from "react";
 import { Map as MapLibreMap, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { richteMaplibreWorkerEin } from "@/lib/maplibre/setup";
+import { ZurueckPfeil } from "@/components/icons/ZurueckPfeil";
 
 type Props = {
   start: { lat: number; lon: number };
   onBestaetigt: (position: { lat: number; lon: number }) => void;
+  /** Zeigt einen Zurück-Button oben links, falls gesetzt (z. B. Erfassen-Flow abbrechen). */
+  onAbbrechen?: () => void;
 };
 
 /**
@@ -17,7 +20,7 @@ type Props = {
  * den Button explizit bestätigt werden - nie automatisch übernommen
  * (CLAUDE.md/PRD 6.2).
  */
-export function StandortAuswahl({ start, onBestaetigt }: Props) {
+export function StandortAuswahl({ start, onBestaetigt, onAbbrechen }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef(start);
 
@@ -62,6 +65,17 @@ export function StandortAuswahl({ start, onBestaetigt }: Props) {
           className="absolute inset-0"
           style={{ position: "absolute", inset: 0 }}
         />
+        {onAbbrechen && (
+          <button
+            type="button"
+            onClick={onAbbrechen}
+            aria-label="Abbrechen"
+            className="btn btn-icon elev-sm absolute left-3 top-3"
+            style={{ background: "var(--color-bg)" }}
+          >
+            <ZurueckPfeil />
+          </button>
+        )}
       </div>
       <div
         className="bg-[var(--color-bg)] p-4"

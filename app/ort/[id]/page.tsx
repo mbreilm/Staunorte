@@ -5,6 +5,7 @@ import type { PlaceObservableView } from "@/lib/supabase/types";
 import { vorZeit, istAelterAlsTage } from "@/lib/format/relativeTime";
 import { AKTIVITAETS_TEXT_DETAIL } from "@/lib/format/activity";
 import { AktivitaetsBadge } from "@/components/place/AktivitaetsBadge";
+import { ZurueckPfeil } from "@/components/icons/ZurueckPfeil";
 import { CheckinButton } from "@/components/checkin/CheckinButton";
 import { FotoGalerie } from "@/components/place/FotoGalerie";
 import { RouteButton } from "@/components/place/RouteButton";
@@ -285,19 +286,5 @@ function ArchivChip({ beobachtung }: { beobachtung: PlaceObservableView }) {
       <span aria-hidden="true">{beobachtung.icon}</span>
       {beobachtung.name_de}
     </span>
-  );
-}
-
-function ZurueckPfeil() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M15 5l-7 7 7 7"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

@@ -19,6 +19,7 @@ import { StandortAuswahl } from "@/components/erfassen/StandortAuswahl";
 import { DuplikatListe } from "@/components/erfassen/DuplikatListe";
 import { FahrzeugChips } from "@/components/erfassen/FahrzeugChips";
 import { ArbeitszeitenAuswahl } from "@/components/arbeitszeiten/ArbeitszeitenAuswahl";
+import { ZurueckPfeil } from "@/components/icons/ZurueckPfeil";
 import { trackEvent } from "@/lib/analytics/plausible";
 
 const STANDARD_LAT = Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? "48.1372");
@@ -110,6 +111,14 @@ export default function OrtErfassen() {
       speichereEntwurf(naechster);
       return naechster;
     });
+  }
+
+  // Erfassen komplett abbrechen (aus jedem Schritt erreichbar) - verwirft
+  // den Entwurf bewusst, statt ihn stehen zu lassen: "Abbrechen" ist eine
+  // ausdrückliche Entscheidung, kein versehentliches Verlassen.
+  function abbrechen() {
+    loescheEntwurf();
+    router.push("/");
   }
 
   async function nachStandortBestaetigt(position: { lat: number; lon: number }) {
@@ -270,29 +279,41 @@ export default function OrtErfassen() {
 
   if (schritt === "foto") {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-base">
-          Mach ein Foto oder wähl eins aus deiner Galerie, um loszulegen.
-        </p>
-        <input
-          ref={fotoInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          hidden
-          onChange={(e) => {
-            const datei = e.target.files?.[0];
-            if (datei) aufFotoAusgewaehlt(datei);
-          }}
-        />
-        <button
-          type="button"
-          disabled={ladeStandort}
-          onClick={() => fotoInputRef.current?.click()}
-          className="btn btn-primary h-12 w-full max-w-xs text-base"
-        >
-          {ladeStandort ? "Einen Moment …" : "Foto auswählen"}
-        </button>
+      <main className="flex flex-1 flex-col">
+        <div className="flex items-center px-4 pt-4">
+          <button
+            type="button"
+            onClick={abbrechen}
+            aria-label="Abbrechen"
+            className="btn btn-icon"
+          >
+            <ZurueckPfeil />
+          </button>
+        </div>
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+          <p className="text-base">
+            Mach ein Foto oder wähl eins aus deiner Galerie, um loszulegen.
+          </p>
+          <input
+            ref={fotoInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            hidden
+            onChange={(e) => {
+              const datei = e.target.files?.[0];
+              if (datei) aufFotoAusgewaehlt(datei);
+            }}
+          />
+          <button
+            type="button"
+            disabled={ladeStandort}
+            onClick={() => fotoInputRef.current?.click()}
+            className="btn btn-primary h-12 w-full max-w-xs text-base"
+          >
+            {ladeStandort ? "Einen Moment …" : "Foto auswählen"}
+          </button>
+        </div>
       </main>
     );
   }
@@ -305,6 +326,7 @@ export default function OrtErfassen() {
           lon: entwurf.lon ?? STANDARD_LON,
         }}
         onBestaetigt={nachStandortBestaetigt}
+        onAbbrechen={abbrechen}
       />
     );
   }
@@ -314,6 +336,7 @@ export default function OrtErfassen() {
       <DuplikatListe
         orte={duplikate}
         onTrotzdemAnlegen={() => setSchritt("formular")}
+        onAbbrechen={abbrechen}
       />
     );
   }
@@ -321,7 +344,15 @@ export default function OrtErfassen() {
   // schritt === "formular"
   return (
     <main className="flex-1 px-6 py-6 pb-10">
-      <h1 className="text-2xl">Ort erfassen</h1>
+      <button
+        type="button"
+        onClick={abbrechen}
+        aria-label="Abbrechen"
+        className="btn btn-icon -ml-2"
+      >
+        <ZurueckPfeil />
+      </button>
+      <h1 className="mt-2 text-2xl">Ort erfassen</h1>
 
       <label className="field mt-4 block">
         <span>Titel</span>

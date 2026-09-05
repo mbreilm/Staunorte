@@ -3,10 +3,12 @@
 import Link from "next/link";
 import type { PlaceNearby } from "@/lib/supabase/types";
 import { formatDistance } from "@/lib/geo/distance";
+import { ZurueckPfeil } from "@/components/icons/ZurueckPfeil";
 
 type Props = {
   orte: PlaceNearby[];
   onTrotzdemAnlegen: () => void;
+  onAbbrechen: () => void;
 };
 
 /**
@@ -14,9 +16,17 @@ type Props = {
  * gezeigt, bevor ein neuer Ort angelegt wird - "Meinst du diese?" statt
  * versehentlicher Duplikate.
  */
-export function DuplikatListe({ orte, onTrotzdemAnlegen }: Props) {
+export function DuplikatListe({ orte, onTrotzdemAnlegen, onAbbrechen }: Props) {
   return (
     <div className="flex flex-1 flex-col px-6 py-6">
+      <button
+        type="button"
+        onClick={onAbbrechen}
+        aria-label="Abbrechen"
+        className="btn btn-icon -ml-2 mb-2"
+      >
+        <ZurueckPfeil />
+      </button>
       <h1 className="text-2xl">Meinst du diesen Ort?</h1>
       <p className="mt-1 text-sm text-muted">
         In der Nähe gibt es schon {orte.length === 1 ? "einen Ort" : "diese Orte"}.
