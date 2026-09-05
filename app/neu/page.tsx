@@ -344,15 +344,23 @@ export default function OrtErfassen() {
   // schritt === "formular"
   return (
     <main className="flex-1 px-6 py-6 pb-10">
-      <button
-        type="button"
-        onClick={abbrechen}
-        aria-label="Abbrechen"
-        className="btn btn-icon -ml-2"
-      >
-        <ZurueckPfeil />
-      </button>
-      <h1 className="mt-2 text-2xl">Ort erfassen</h1>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={abbrechen}
+          aria-label="Abbrechen"
+          className="btn btn-icon -ml-2"
+        >
+          <ZurueckPfeil />
+        </button>
+        <span className="text-xs text-muted">Entwurf gespeichert</span>
+      </div>
+      <h1 className="mt-2 text-2xl">
+        {kategorieName ? `${kategorieName} erfassen` : "Ort erfassen"}
+      </h1>
+      <p className="mt-0.5 text-[13.5px] text-muted">
+        Foto, Ort, ein Fahrzeug - mehr braucht es nicht.
+      </p>
 
       <label className="field mt-4 block">
         <span>Titel</span>

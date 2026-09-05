@@ -27,25 +27,28 @@ function baueSvgProps({ size = 24, stroke = 2, ...rest }: IconProps) {
 export function IconBeton(props: IconProps) {
   return (
     <svg {...baueSvgProps(props)}>
-      <path d="M2 17.5h1.5" />
-      <path d="M2 17.5v-4.5a1 1 0 0 1 1-1h2.5l2.2 3.2" />
-      <path d="M7.7 17.5h2.3" />
-      <circle cx="5.7" cy="18.5" r="1.6" />
-      <circle cx="17.3" cy="18.5" r="1.6" />
-      <rect x="10.5" y="2.5" width="5" height="13" rx="2.5" transform="rotate(-35 13 9)" />
-      <path d="M9.8 8l4.8 3" transform="rotate(-35 13 9)" />
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+      <path d="M14 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+      <path d="M16 19h-9" />
+      <path d="M3 15v-3a1 1 0 0 1 1 -1h3v4h13" />
+      <path d="M20 15v-6m-8 6v-2" />
+      <path d="M12 13l-1 -3l7 -5l2 4z" />
+      <path d="M16 11l-2 -3" />
     </svg>
   );
 }
 
-/** Straßenwalze: breite Walze auf einer Bodenlinie, kleine Kabine darüber. */
+/** Straßenwalze: breite Walze vorn, normales Rad hinten, kleine Kabine darüber. */
 export function IconStrassenbau(props: IconProps) {
   return (
     <svg {...baueSvgProps(props)}>
-      <path d="M2 20h20" />
-      <rect x="3" y="13.5" width="15" height="5.5" rx="2.75" />
-      <path d="M9 13.5v-3a1 1 0 0 1 1-1h2.5" />
-      <rect x="12.5" y="5.5" width="5" height="4" rx="1" />
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M4 16a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+      <path d="M16 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+      <path d="M18 19h-11" />
+      <path d="M7 13v-2h7v4h6" />
+      <path d="M9 11v-3a1 1 0 0 1 1 -1h2v4" />
     </svg>
   );
 }
@@ -54,11 +57,12 @@ export function IconStrassenbau(props: IconProps) {
 export function IconSpezial(props: IconProps) {
   return (
     <svg {...baueSvgProps(props)}>
-      <rect x="3" y="9" width="12" height="8" rx="1.5" />
-      <circle cx="7" cy="18.5" r="1.5" />
-      <circle cx="13" cy="18.5" r="1.5" />
-      <path d="M15 12h2l3 2" />
-      <path d="M20 14c1 1.2 1 3-.2 4.3-1 1-2.5 1-3.3-.1" />
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M4 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+      <path d="M10 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+      <path d="M19 19h-13" />
+      <path d="M4 15v-4a1 1 0 0 1 1 -1h2v-2h7v7h-10" />
+      <path d="M14 12h2a3 3 0 0 1 3 3v4" />
     </svg>
   );
 }

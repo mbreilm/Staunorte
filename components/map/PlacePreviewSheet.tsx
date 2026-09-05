@@ -93,73 +93,56 @@ export function PlacePreviewSheet({ ort, beobachtungsLabel, onClose }: Props) {
           />
         </div>
 
-        <div className="px-6">
-          <div
-            className="relative aspect-video w-full overflow-hidden rounded-2xl"
-            style={{ background: "var(--color-neutral-200)" }}
+        <div className="relative px-6">
+          <button
+            type="button"
+            aria-label="Schließen"
+            onClick={onClose}
+            className="btn btn-icon elev-sm absolute right-6 top-0"
+            style={{ background: "var(--color-bg)" }}
           >
-            <button
-              type="button"
-              aria-label="Schließen"
-              onClick={onClose}
-              className="btn btn-icon elev-sm absolute right-2 top-2 text-lg"
-              style={{ background: "var(--color-bg)" }}
+            ×
+          </button>
+
+          <div className="flex gap-3.5">
+            <div
+              className="h-[88px] w-[88px] flex-none overflow-hidden rounded-[20px]"
+              style={{ background: "var(--color-neutral-200)" }}
             >
-              ×
-            </button>
-            {fotoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration
-              <img
-                src={fotoUrl}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div
-                className="flex h-full w-full items-center justify-center"
-                style={{ color: "var(--color-neutral-400)" }}
-              >
-                <svg
-                  width="40"
-                  height="40"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
+              {fotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration
+                <img src={fotoUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div
+                  className="flex h-full w-full items-center justify-center"
+                  style={{ color: "var(--color-neutral-400)" }}
                 >
-                  <rect
-                    x="3"
-                    y="5"
-                    width="18"
-                    height="14"
-                    rx="2"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                  <circle cx="9" cy="10" r="1.5" fill="currentColor" />
-                  <path
-                    d="M3 16l5-4 4 3 5-5 4 4"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-            )}
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                    <circle cx="9" cy="10" r="1.5" fill="currentColor" />
+                    <path
+                      d="M3 16l5-4 4 3 5-5 4 4"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
+
+            <div className="flex min-w-0 flex-1 flex-col gap-1 pr-8">
+              <AktivitaetsBadge zustand={ort.activity} text={AKTIVITAETS_TEXT[ort.activity]} />
+              <h2 className="truncate text-lg">{ort.title}</h2>
+              <p className="text-xs text-muted">
+                {formatDistance(ort.distance_m)} · {ort.fresh_observables} aktuelle{" "}
+                {beobachtungsLabel}
+              </p>
+            </div>
           </div>
 
-          <div className="mt-4">
-            <AktivitaetsBadge zustand={ort.activity} text={AKTIVITAETS_TEXT[ort.activity]} />
-          </div>
-
-          <h2 className="mt-2 text-2xl">{ort.title}</h2>
-
-          <p className="mt-1 text-sm text-muted">
-            {formatDistance(ort.distance_m)} · {ort.fresh_observables} aktuelle{" "}
-            {beobachtungsLabel} · {ort.checkin_count} Check-ins
-          </p>
-
-          <div className="mt-5 flex gap-2">
+          <div className="mt-3.5 flex gap-2">
             <Link href={`/ort/${ort.id}`} className="btn btn-primary flex-1">
               Details
             </Link>

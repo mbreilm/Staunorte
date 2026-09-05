@@ -5,6 +5,7 @@
 import type { ComponentType } from "react";
 import {
   IconMapPinCheck,
+  IconMapPin,
   IconEye,
   IconEyeOff,
   IconLayoutGrid,
@@ -33,6 +34,7 @@ import { IconBeton, IconStrassenbau, IconSpezial } from "@/components/icons/Grou
 
 // — UI-Icons (docs/DESIGN-ICONS.md Abschnitt 4) —
 export const IconCheckin = IconMapPinCheck;
+export const IconStandort = IconMapPin;
 export const IconFrisch = IconEye;
 export const IconVeraltet = IconEyeOff;
 export const IconAlbum = IconLayoutGrid;

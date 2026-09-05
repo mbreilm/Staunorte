@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { IconStandort } from "@/lib/icons";
 
 const SCHLUESSEL_GEZEIGT = "baustellenjaeger:onboarding-gezeigt";
 const SCHLUESSEL_BESUCHE = "baustellenjaeger:besuchszaehler";
@@ -31,7 +32,6 @@ type BeforeInstallPromptEvent = Event & {
  */
 export function Onboarding() {
   const [zeigeOnboarding, setZeigeOnboarding] = useState(false);
-  const [schritt, setSchritt] = useState<1 | 2 | 3>(1);
   const [kategorie, setKategorie] = useState<KategorieInfo | null>(null);
   const [sicherheitBestaetigt, setSicherheitBestaetigt] = useState(false);
   const [zeigeInstallHinweis, setZeigeInstallHinweis] = useState(false);
@@ -133,59 +133,75 @@ export function Onboarding() {
 
   if (zeigeOnboarding && kategorie) {
     return (
-      <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--color-bg)] p-6">
-        {schritt === 1 && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <span className="text-6xl" aria-hidden="true">
-              {kategorie.icon}
-            </span>
-            <p className="text-base">
-              Entdecke {kategorie.namePlural} in deiner Nähe und schau dir an, welche{" "}
-              {kategorie.beobachtungsLabel} dort gerade sind.
-            </p>
-            <button type="button" onClick={() => setSchritt(2)} className="btn btn-primary">
-              Weiter
-            </button>
-          </div>
-        )}
+      <div className="fixed inset-0 z-[60] flex flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-6">
+        <div className="flex flex-col gap-2.5">
+          <span
+            aria-hidden="true"
+            className="flex h-[74px] w-[74px] items-center justify-center rounded-full text-4xl"
+            style={{ background: "var(--color-accent)" }}
+          >
+            {kategorie.icon}
+          </span>
+          <h2 className="mt-2 text-[31px] leading-[1.08]">Wo ist gerade was los?</h2>
+          <p className="mt-1 text-base leading-relaxed" style={{ color: "var(--color-neutral-700)" }}>
+            Entdecke {kategorie.namePlural} in deiner Nähe - mit Fotos, welche{" "}
+            {kategorie.beobachtungsLabel} zuletzt gesehen wurden und ob dort vermutlich
+            gerade gearbeitet wird.
+          </p>
+        </div>
 
-        {schritt === 2 && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <p className="text-base">{kategorie.sicherheitshinweis}</p>
-            <label className="radio">
-              <input
-                type="checkbox"
-                checked={sicherheitBestaetigt}
-                onChange={(e) => setSicherheitBestaetigt(e.target.checked)}
-              />
-              <span className="dot" />
-              Ich habe verstanden
-            </label>
-            <button
-              type="button"
-              disabled={!sicherheitBestaetigt}
-              onClick={() => setSchritt(3)}
-              className="btn btn-primary"
-            >
-              Weiter
-            </button>
+        <div className="card mt-5 gap-2 p-4">
+          <div className="flex items-center gap-2.5">
+            <IconStandort size={20} stroke={2.5} style={{ color: "var(--color-accent-700)" }} />
+            <strong className="text-[15px]">Standort freigeben</strong>
           </div>
-        )}
+          <p className="text-[13.5px] leading-snug" style={{ color: "var(--color-neutral-700)" }}>
+            Damit wir dir zeigen können, was in der Nähe ist. Nur während du die App
+            benutzt - wir speichern keine Wege.
+          </p>
+        </div>
 
-        {schritt === 3 && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <p className="text-base">
-              Wir zeigen dir gern {kategorie.namePlural} in deiner Nähe. Dafür brauchen
-              wir deinen Standort.
-            </p>
-            <button type="button" onClick={standortAnfragen} className="btn btn-primary">
-              Standort erlauben
-            </button>
-            <button type="button" onClick={onboardingSchliessen} className="btn btn-ghost text-sm">
-              Später
-            </button>
-          </div>
-        )}
+        <div
+          className="mt-3.5 flex flex-col gap-1.5 rounded-2xl p-4"
+          style={{ border: "1.5px solid var(--color-accent-300)", background: "var(--color-accent-100)" }}
+        >
+          <strong className="text-sm" style={{ color: "var(--color-accent-800)" }}>
+            Bitte einmal lesen
+          </strong>
+          <p className="text-[13px] leading-snug" style={{ color: "var(--color-accent-800)" }}>
+            {kategorie.sicherheitshinweis}
+          </p>
+          <label
+            className="mt-1.5 flex cursor-pointer items-start gap-2 text-[13px] leading-snug"
+            style={{ color: "var(--color-accent-900)" }}
+          >
+            <input
+              type="checkbox"
+              checked={sicherheitBestaetigt}
+              onChange={(e) => setSicherheitBestaetigt(e.target.checked)}
+              className="mt-0.5 h-5 w-5 flex-none"
+              style={{ accentColor: "var(--color-accent-700)" }}
+            />
+            <span>Verstanden, wir schauen nur von außen zu.</span>
+          </label>
+        </div>
+
+        <div className="min-h-3.5 flex-1" />
+        <button
+          type="button"
+          disabled={!sicherheitBestaetigt}
+          onClick={standortAnfragen}
+          className="btn btn-primary btn-block h-[52px] text-base"
+        >
+          Standort freigeben
+        </button>
+        <button
+          type="button"
+          onClick={onboardingSchliessen}
+          className="btn btn-ghost btn-block h-11 text-sm"
+        >
+          Ohne Standort weiter
+        </button>
       </div>
     );
   }

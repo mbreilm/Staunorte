@@ -45,14 +45,27 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
     ? freischaltungNachTyp.get(ausgewaehlt.id)
     : null;
 
+  const anteil =
+    typen.length > 0 ? Math.min(100, (freischaltungNachTyp.size / typen.length) * 100) : 0;
+
   return (
     <>
-      <p className="text-lg">
-        {freischaltungNachTyp.size} von {typen.length} Fahrzeugen
+      <h1 className="text-[26px] leading-tight">Sammelalbum</h1>
+      <p className="mt-0.5 text-[13.5px] text-muted">
+        {freischaltungNachTyp.size} von {typen.length} Fahrzeugen gefunden
       </p>
+      <div
+        className="mt-3 h-2.5 overflow-hidden rounded-full"
+        style={{ background: "var(--color-neutral-300)" }}
+      >
+        <span
+          className="block h-full rounded-full"
+          style={{ width: `${anteil}%`, background: "var(--color-accent)" }}
+        />
+      </div>
 
       {!angemeldet && (
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-3 text-sm text-muted">
           Fürs Sammeln brauchst du ein Konto. Ohne Anmeldung siehst du nur, welche
           Fahrzeuge es gibt.
         </p>

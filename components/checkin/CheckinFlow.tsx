@@ -109,7 +109,7 @@ export function CheckinFlow({
     );
   }
 
-  async function eingecheckt() {
+  async function eingecheckt(beobachtungsIds: string[] = ausgewaehlt) {
     const position = positionRef.current;
     if (!position) return;
     setSchritt("speichert");
@@ -119,7 +119,7 @@ export function CheckinFlow({
       p_lat: position.lat,
       p_lon: position.lon,
       p_accuracy_m: position.accuracy ?? undefined,
-      p_observable_ids: ausgewaehlt,
+      p_observable_ids: beobachtungsIds,
     });
 
     if (error) {
@@ -229,7 +229,7 @@ export function CheckinFlow({
           <p className="text-base">
             Du bist gerade {formatDistance(zuWeitEntfernt)} von diesem Ort entfernt.
           </p>
-          <button type="button" onClick={eingecheckt} className="btn btn-primary">
+          <button type="button" onClick={() => eingecheckt()} className="btn btn-primary">
             Nochmal versuchen
           </button>
           {erstelltVon && user?.id === erstelltVon && (
@@ -249,8 +249,12 @@ export function CheckinFlow({
       )}
 
       {schritt === "auswahl" && (
-        <div className="flex-1 overflow-y-auto px-6 pb-24">
+        <div className="flex-1 overflow-y-auto px-6 pb-32">
           <h1 className="text-2xl">Was siehst du gerade?</h1>
+          <p className="mt-1 text-[13.5px] text-muted">
+            Tippe alles an, was du sehen kannst. Was du nicht antippst, verschwindet
+            mit der Zeit von selbst.
+          </p>
 
           {gemeldetSortiert.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
@@ -302,8 +306,20 @@ export function CheckinFlow({
           </div>
 
           <div className="fixed inset-x-0 bottom-0 bg-[var(--color-bg)] p-4">
-            <button type="button" onClick={eingecheckt} className="btn btn-primary btn-block">
+            <button
+              type="button"
+              onClick={() => eingecheckt()}
+              className="btn btn-primary btn-block h-14 text-base"
+            >
               Das habe ich gesehen
+            </button>
+            <button
+              type="button"
+              onClick={() => eingecheckt([])}
+              className="btn btn-ghost btn-block h-10 text-[13px]"
+              style={{ color: "var(--color-neutral-600)" }}
+            >
+              Nur „Ich war da“
             </button>
           </div>
         </div>
