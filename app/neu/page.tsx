@@ -321,7 +321,7 @@ export default function OrtErfassen() {
   // schritt === "formular"
   return (
     <main className="flex-1 px-6 py-6 pb-10">
-      <h1 className="text-lg">Ort erfassen</h1>
+      <h1 className="text-2xl">Ort erfassen</h1>
 
       <label className="field mt-4 block">
         <span>Titel</span>

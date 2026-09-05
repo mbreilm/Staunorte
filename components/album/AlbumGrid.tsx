@@ -61,7 +61,7 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
       <div className="mt-5 flex flex-col gap-5">
         {[...gruppen.entries()].map(([gruppe, gruppenTypen]) => (
           <div key={gruppe}>
-            {gruppe && <p className="card-kicker mb-2">{gruppe}</p>}
+            {gruppe && <h6 className="mb-2">{gruppe}</h6>}
             <div className="grid grid-cols-3 gap-3">
               {gruppenTypen.map((typ) => {
                 const freigeschaltet = angemeldet && freischaltungNachTyp.has(typ.id);

@@ -234,7 +234,7 @@ export function CheckinFlow({
 
       {schritt === "auswahl" && (
         <div className="flex-1 overflow-y-auto px-6 pb-24">
-          <h1 className="text-lg">Was siehst du gerade?</h1>
+          <h1 className="text-2xl">Was siehst du gerade?</h1>
 
           {gemeldetSortiert.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
@@ -398,15 +398,21 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={aktiv}
-      className="btn"
+      className="btn min-h-12 gap-2.5 pl-1.5 pr-4"
       style={
         aktiv
-          ? { background: "var(--color-accent-100)", color: "var(--color-accent-800)", border: "1px solid var(--color-accent-300)" }
-          : { border: "1px solid var(--color-divider)" }
+          ? { background: "var(--color-accent-100)", color: "var(--color-accent-800)", border: "2px solid var(--color-accent-300)" }
+          : { border: "2px solid var(--color-divider)" }
       }
     >
-      <span aria-hidden="true">{icon}</span>
-      {name}
+      <span
+        aria-hidden="true"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-lg"
+        style={{ background: aktiv ? "var(--color-accent-200)" : "var(--color-neutral-200)" }}
+      >
+        {icon}
+      </span>
+      <b className="text-[14.5px]">{name}</b>
     </button>
   );
 }

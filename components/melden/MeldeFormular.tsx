@@ -67,7 +67,7 @@ export function MeldeFormular({ targetType, targetId, onFertig }: Props) {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <h1 className="text-lg">Was stimmt nicht?</h1>
+      <h1 className="text-2xl">Was stimmt nicht?</h1>
 
       <div className="flex flex-col gap-2">
         {GRUENDE.map((g) => (

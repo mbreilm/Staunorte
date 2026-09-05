@@ -101,7 +101,10 @@
   h3 { font-size: 25px; }
   h4 { font-size: 20px; }
   h5 { font-size: 16px; }
-  h6 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+  h6 {
+    font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-neutral-700);
+  }
   p { margin: 0 0 var(--space-3); }
   a { color: var(--color-accent); text-underline-offset: 3px; text-decoration: none; }
   a:hover { color: var(--color-accent-600); }
@@ -120,12 +123,14 @@
 @layer components {
   /* — buttons — */
   .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     cursor: pointer; text-decoration: none;
     font-family: var(--font-heading); font-weight: var(--font-heading-weight);
     font-size: 14px; line-height: 1.2; color: var(--color-text);
     background: transparent; border: 1px solid transparent;
-    padding: var(--space-2) calc(var(--space-3) * 1.2);
+    /* Große Tap-Ziele (CLAUDE.md Design-Leitplanken, min. 48px) - Buttons
+       ohne eigene Höhenangabe sollen trotzdem bequem antippbar sein. */
+    padding: var(--space-3) calc(var(--space-3) * 1.4);
     border-radius: var(--radius-md);
   }
   .btn svg { display: block; }
@@ -139,8 +144,13 @@
   .btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
   .btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
   .btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
-  .btn-icon { width: 36px; height: 36px; padding: 0; }
+  .btn-icon { width: 44px; height: 44px; padding: 0; }
   .btn-block { width: 100%; margin-top: var(--space-2); }
+  /* <summary> als Button (natives <details> statt eigenem JS-Toggle) -
+     Aufklapp-Dreieck ausblenden, den Rest übernimmt .btn. */
+  summary.btn { list-style: none; }
+  summary.btn::-webkit-details-marker { display: none; }
+  summary.btn::marker { content: ""; }
 
   /* — forms — */
   .field > label {
@@ -148,8 +158,8 @@
     color: color-mix(in srgb, var(--color-text) 70%, transparent);
   }
   .input {
-    width: 100%; min-height: 36px; padding: 6px 10px; font: inherit;
-    font-size: 14px; color: var(--color-text); caret-color: var(--color-accent);
+    width: 100%; min-height: 48px; padding: 10px 14px; font: inherit;
+    font-size: 15px; color: var(--color-text); caret-color: var(--color-accent);
     background: var(--color-surface);
     border: 1px solid var(--color-divider); border-radius: var(--radius-md);
   }

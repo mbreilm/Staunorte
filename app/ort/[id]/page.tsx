@@ -3,12 +3,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { PlaceObservableView } from "@/lib/supabase/types";
 import { vorZeit, istAelterAlsTage } from "@/lib/format/relativeTime";
-import {
-  AKTIVITAETS_TEXT_DETAIL,
-  AKTIVITAETS_FARBE_DETAIL,
-} from "@/lib/format/activity";
+import { AKTIVITAETS_TEXT_DETAIL } from "@/lib/format/activity";
+import { AktivitaetsBadge } from "@/components/place/AktivitaetsBadge";
 import { CheckinButton } from "@/components/checkin/CheckinButton";
 import { FotoGalerie } from "@/components/place/FotoGalerie";
+import { RouteButton } from "@/components/place/RouteButton";
 import { ArbeitszeitenBearbeitenButton } from "@/components/arbeitszeiten/ArbeitszeitenBearbeitenButton";
 import { formatArbeitszeiten } from "@/lib/format/arbeitszeiten";
 import { leiteMusterAb } from "@/lib/format/activityPattern";
@@ -34,18 +33,23 @@ export default async function OrtDetailSeite({
 
   if (!ort) notFound();
 
-  const [{ data: kategorie }, { data: aktivitaet }, { data: checkinsWoche }] =
-    await Promise.all([
-      supabase
-        .from("place_categories")
-        .select("name_singular, safety_notice, observable_label, hours_label")
-        .eq("id", ort.category_id)
-        .maybeSingle(),
-      supabase.rpc("place_is_active_now", { p_place_id: id }),
-      // Kann fehlschlagen, solange Migration 0005 auf diesem Projekt noch
-      // nicht eingespielt wurde - dann einfach ohne Wochenzahl anzeigen.
-      supabase.rpc("place_checkins_this_week", { p_place_id: id }),
-    ]);
+  const [
+    { data: kategorie },
+    { data: aktivitaet },
+    { data: checkinsWoche },
+    { data: position },
+  ] = await Promise.all([
+    supabase
+      .from("place_categories")
+      .select("name_singular, safety_notice, observable_label, hours_label")
+      .eq("id", ort.category_id)
+      .maybeSingle(),
+    supabase.rpc("place_is_active_now", { p_place_id: id }),
+    // Kann fehlschlagen, solange Migration 0005 auf diesem Projekt noch
+    // nicht eingespielt wurde - dann einfach ohne Wochenzahl anzeigen.
+    supabase.rpc("place_checkins_this_week", { p_place_id: id }),
+    supabase.rpc("place_location", { p_place_id: id }),
+  ]);
 
   const { data: fotos } = await supabase
     .from("place_photos")
@@ -70,12 +74,8 @@ export default async function OrtDetailSeite({
   const angegebeneZeiten = formatArbeitszeiten(arbeitszeiten ?? []);
   const beobachtetesMuster = aktivitaetsMuster ? leiteMusterAb(aktivitaetsMuster) : null;
 
-  const aktivitaetsText = aktivitaet
-    ? AKTIVITAETS_TEXT_DETAIL[aktivitaet]
-    : AKTIVITAETS_TEXT_DETAIL.unbekannt;
-  const aktivitaetsFarbe = aktivitaet
-    ? AKTIVITAETS_FARBE_DETAIL[aktivitaet]
-    : AKTIVITAETS_FARBE_DETAIL.unbekannt;
+  const aktivitaetsZustand = aktivitaet ?? "unbekannt";
+  const aktivitaetsText = AKTIVITAETS_TEXT_DETAIL[aktivitaetsZustand];
 
   const jetztHier = (beobachtungen ?? []).filter((o) => o.bucket === "jetzt_hier");
   const kuerzlich = (beobachtungen ?? []).filter((o) => o.bucket === "kuerzlich");
@@ -93,129 +93,121 @@ export default async function OrtDetailSeite({
     };
   });
 
+  const standort = position?.[0] ?? null;
+
   return (
     <main className="flex-1 pb-10">
-      <div className="flex items-center px-4 pt-4">
-        <Link href="/" aria-label="Zurück zur Karte" className="btn btn-icon">
-          <ZurueckPfeil />
-        </Link>
-      </div>
+      {galerieFotos.length > 0 ? (
+        <FotoGalerie fotos={galerieFotos} zurueckHref="/" />
+      ) : (
+        <div className="flex items-center px-4 pt-4">
+          <Link href="/" aria-label="Zurück zur Karte" className="btn btn-icon elev-sm">
+            <ZurueckPfeil />
+          </Link>
+        </div>
+      )}
 
-      {galerieFotos.length > 0 && <FotoGalerie fotos={galerieFotos} />}
+      <div className="px-6 pt-5">
+        <AktivitaetsBadge zustand={aktivitaetsZustand} text={aktivitaetsText} />
 
-      <div className="px-6 pt-6">
-        <h1 className="text-3xl">{ort.title}</h1>
-        {ort.address && <p className="mt-1 text-sm text-muted">{ort.address}</p>}
-        {ort.note && <p className="mt-3 text-sm">{ort.note}</p>}
+        <h1 className="mt-3 text-[26px] leading-[1.1]">{ort.title}</h1>
+        <p className="mt-1 text-sm text-muted">
+          {ort.address && <>{ort.address} · </>}
+          {ort.checkin_count} Besuche
+          {typeof checkinsWoche === "number" && <> · {checkinsWoche} diese Woche</>}
+        </p>
 
-        <span className={`mt-4 inline-block ${aktivitaetsFarbe}`}>
-          {aktivitaetsText}
-        </span>
+        {(angegebeneZeiten || beobachtetesMuster) && (
+          <div className="card mt-4 gap-1">
+            {beobachtetesMuster ? (
+              <>
+                <strong className="text-sm">{beobachtetesMuster.text}</strong>
+                {angegebeneZeiten && (
+                  <span className="text-xs text-muted">laut Angabe: {angegebeneZeiten}</span>
+                )}
+              </>
+            ) : (
+              <strong className="text-sm">{angegebeneZeiten}</strong>
+            )}
+          </div>
+        )}
+
+        {ort.note && (
+          <p className="mt-4 text-sm leading-relaxed" style={{ color: "var(--color-neutral-700)" }}>
+            „{ort.note}“
+          </p>
+        )}
 
         {(jetztHier.length > 0 || kuerzlich.length > 0 || archiv.length > 0) && (
           <section className="mt-6">
-            <h2 className="card-kicker">
-              {kategorie?.observable_label ?? "Beobachtungen"}
-            </h2>
+            <h6>{kategorie?.observable_label ?? "Fahrzeuge"}</h6>
 
-            {jetztHier.length > 0 && (
-              <div className="mt-3">
-                <p className="text-xs font-semibold" style={{ color: "var(--color-accent-2-700)" }}>
-                  Jetzt hier
-                </p>
-                <ul className="mt-1.5 flex flex-col gap-1.5">
-                  {jetztHier.map((beobachtung) => (
-                    <BeobachtungsZeile key={beobachtung.observable_type_id} beobachtung={beobachtung} />
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {kuerzlich.length > 0 && (
-              <div className="mt-3">
-                <ul className="flex flex-col gap-1.5">
-                  {kuerzlich.map((beobachtung) => (
-                    <BeobachtungsZeile
-                      key={beobachtung.observable_type_id}
-                      beobachtung={beobachtung}
-                      zeitHinweis={`Zuletzt gesehen ${vorZeit(beobachtung.last_seen_at)}`}
-                    />
-                  ))}
-                </ul>
-              </div>
+            {(jetztHier.length > 0 || kuerzlich.length > 0) && (
+              <ul className="mt-2 flex flex-col gap-2">
+                {jetztHier.map((beobachtung) => (
+                  <BeobachtungsZeile
+                    key={beobachtung.observable_type_id}
+                    beobachtung={beobachtung}
+                    variante="jetzt"
+                  />
+                ))}
+                {kuerzlich.map((beobachtung) => (
+                  <BeobachtungsZeile
+                    key={beobachtung.observable_type_id}
+                    beobachtung={beobachtung}
+                    variante="kuerzlich"
+                    zeitHinweis={`Zuletzt gesehen ${vorZeit(beobachtung.last_seen_at)}`}
+                  />
+                ))}
+              </ul>
             )}
 
             {archiv.length > 0 && (
               <details className="mt-3">
-                <summary className="cursor-pointer text-xs font-medium text-muted">
+                <summary className="btn btn-secondary btn-block">
                   Früher hier gesehen ({archiv.length})
                 </summary>
-                <ul className="mt-1.5 flex flex-col gap-1.5">
+                <div className="mt-2.5 flex flex-wrap gap-2">
                   {archiv.map((beobachtung) => (
-                    <BeobachtungsZeile key={beobachtung.observable_type_id} beobachtung={beobachtung} />
+                    <ArchivChip key={beobachtung.observable_type_id} beobachtung={beobachtung} />
                   ))}
-                </ul>
+                </div>
               </details>
             )}
           </section>
         )}
 
-        {(angegebeneZeiten || beobachtetesMuster) && (
-          <section className="mt-6">
-            <h2 className="card-kicker">{kategorie?.hours_label ?? "Arbeitszeiten"}</h2>
-            {beobachtetesMuster ? (
-              <>
-                <p className="mt-1 text-sm">{beobachtetesMuster.text}</p>
-                {angegebeneZeiten && (
-                  <p className="mt-0.5 text-xs text-muted">
-                    laut Angabe: {angegebeneZeiten}
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="mt-1 text-sm">{angegebeneZeiten}</p>
-            )}
-            <div className="mt-1.5">
-              <ArbeitszeitenBearbeitenButton
-                placeId={id}
-                hatSchonZeiten={!!angegebeneZeiten}
-              />
-            </div>
-          </section>
-        )}
-        {!angegebeneZeiten && !beobachtetesMuster && (
-          <div className="mt-6">
-            <ArbeitszeitenBearbeitenButton placeId={id} hatSchonZeiten={false} />
-          </div>
-        )}
-
-        <p className="mt-6 text-sm text-muted">
-          {ort.checkin_count} Check-ins insgesamt
-          {typeof checkinsWoche === "number" && (
-            <> · {checkinsWoche} diese Woche</>
-          )}
-        </p>
+        <div className="mt-5">
+          <ArbeitszeitenBearbeitenButton placeId={id} hatSchonZeiten={!!angegebeneZeiten} />
+        </div>
 
         {kategorie?.safety_notice && (
           <div
             className="mt-4 rounded-2xl p-4 text-sm"
-            style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)" }}
+            style={{
+              background: "var(--color-accent-100)",
+              border: "1.5px solid var(--color-accent-300)",
+              color: "var(--color-accent-800)",
+            }}
           >
             {kategorie.safety_notice}
           </div>
         )}
 
-        <div className="mt-6">
-          <CheckinButton
-            placeId={id}
-            categoryId={ort.category_id}
-            erstelltVon={ort.created_by}
-            bereitsGemeldet={beobachtungen ?? []}
-          />
+        <div className="mt-5 flex gap-2">
+          <div className="flex-1">
+            <CheckinButton
+              placeId={id}
+              categoryId={ort.category_id}
+              erstelltVon={ort.created_by}
+              bereitsGemeldet={beobachtungen ?? []}
+            />
+          </div>
+          {standort && <RouteButton lat={standort.lat} lon={standort.lon} />}
         </div>
 
-        <div className="mt-8 text-center">
-          <Link href={`/ort/${id}/melden`} className="btn btn-ghost text-xs">
+        <div className="mt-6 text-center">
+          <Link href={`/ort/${id}/melden`} className="btn btn-ghost text-xs" style={{ color: "var(--color-neutral-600)" }}>
             Diesen Ort melden
           </Link>
         </div>
@@ -224,21 +216,70 @@ export default async function OrtDetailSeite({
   );
 }
 
+const BUCKET_STIL = {
+  jetzt: {
+    background: "var(--color-accent-2-100)",
+    border: "1.5px solid var(--color-accent-2-300)",
+    iconBg: "var(--color-accent-2-600)",
+    label: "Jetzt hier",
+    labelColor: "var(--color-accent-2-800)",
+  },
+  kuerzlich: {
+    background: "var(--color-neutral-200)",
+    border: "1.5px solid var(--color-neutral-300)",
+    iconBg: "var(--color-neutral-400)",
+    label: null,
+    labelColor: "var(--color-neutral-700)",
+  },
+} as const;
+
 function BeobachtungsZeile({
   beobachtung,
+  variante,
   zeitHinweis,
 }: {
   beobachtung: PlaceObservableView;
+  variante: "jetzt" | "kuerzlich";
   zeitHinweis?: string;
 }) {
+  const stil = BUCKET_STIL[variante];
   return (
-    <li className="card flex-row items-center gap-3 px-3 py-2.5 text-sm">
-      <span className="text-xl" aria-hidden="true">
+    <li
+      className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5"
+      style={{ background: stil.background, border: stil.border }}
+    >
+      <span
+        className="flex h-11 w-11 flex-none items-center justify-center rounded-full text-xl"
+        aria-hidden="true"
+        style={{ background: stil.iconBg }}
+      >
         {beobachtung.icon}
       </span>
-      <span className="flex-1">{beobachtung.name_de}</span>
-      {zeitHinweis && <span className="text-xs text-muted">{zeitHinweis}</span>}
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <strong className="text-[15px]" style={{ color: variante === "kuerzlich" ? "var(--color-neutral-800)" : undefined }}>
+          {beobachtung.name_de}
+        </strong>
+        {variante === "jetzt" ? (
+          <span className="text-xs font-bold" style={{ color: stil.labelColor }}>
+            {stil.label}
+          </span>
+        ) : (
+          <span className="text-xs text-muted">{zeitHinweis}</span>
+        )}
+      </span>
     </li>
+  );
+}
+
+function ArchivChip({ beobachtung }: { beobachtung: PlaceObservableView }) {
+  return (
+    <span
+      className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm"
+      style={{ border: "1.5px dashed var(--color-neutral-400)", color: "var(--color-neutral-700)" }}
+    >
+      <span aria-hidden="true">{beobachtung.icon}</span>
+      {beobachtung.name_de}
+    </span>
   );
 }
 

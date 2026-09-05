@@ -10,61 +10,61 @@ export default function NutzungsbedingungenSeite() {
       </p>
 
       <section className="mt-6">
-        <h2 className="card-kicker">Geltungsbereich</h2>
+        <h6>Geltungsbereich</h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Leistungsbeschreibung
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Registrierung und Nutzerkonto
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">Pflichten der Nutzer</h2>
+        <h6>Pflichten der Nutzer</h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Nutzergenerierte Inhalte und Rechteeinräumung
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Haftungsausschluss und Sicherheitshinweis
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Sperrung und Kündigung
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Änderungen dieser Bedingungen
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Anwendbares Recht und Gerichtsstand
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
     </main>

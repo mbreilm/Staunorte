@@ -25,7 +25,7 @@ export function FahrzeugChips({ typen, ausgewaehlt, onToggle }: Props) {
     <div className="flex flex-col gap-4">
       {[...gruppen.entries()].map(([gruppe, gruppenTypen]) => (
         <div key={gruppe}>
-          {gruppe && <p className="card-kicker mb-2">{gruppe}</p>}
+          {gruppe && <h6 className="mb-2">{gruppe}</h6>}
           <div className="flex flex-wrap gap-2">
             {gruppenTypen.map((typ) => {
               const aktiv = ausgewaehlt.includes(typ.id);
@@ -35,15 +35,21 @@ export function FahrzeugChips({ typen, ausgewaehlt, onToggle }: Props) {
                   type="button"
                   onClick={() => onToggle(typ.id)}
                   aria-pressed={aktiv}
-                  className="btn"
+                  className="btn min-h-11 gap-2 pl-1.5 pr-3.5"
                   style={
                     aktiv
-                      ? { background: "var(--color-accent-100)", color: "var(--color-accent-800)", border: "1px solid var(--color-accent-300)" }
-                      : { border: "1px solid var(--color-divider)" }
+                      ? { background: "var(--color-accent-100)", color: "var(--color-accent-800)", border: "2px solid var(--color-accent-300)" }
+                      : { border: "2px solid var(--color-divider)" }
                   }
                 >
-                  <span aria-hidden="true">{typ.icon}</span>
-                  {typ.name_de}
+                  <span
+                    aria-hidden="true"
+                    className="flex h-8 w-8 items-center justify-center rounded-full"
+                    style={{ background: aktiv ? "var(--color-accent-200)" : "var(--color-neutral-200)" }}
+                  >
+                    {typ.icon}
+                  </span>
+                  <b className="text-[13.5px]">{typ.name_de}</b>
                 </button>
               );
             })}

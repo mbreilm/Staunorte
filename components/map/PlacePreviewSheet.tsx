@@ -6,6 +6,7 @@ import type { ActivityState, PlaceNearby } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { formatDistance } from "@/lib/geo/distance";
 import { buildRouteUrl } from "@/lib/geo/routeLink";
+import { AktivitaetsBadge } from "@/components/place/AktivitaetsBadge";
 
 const FOTO_BUCKET = "place-photos";
 
@@ -15,12 +16,6 @@ const AKTIVITAETS_TEXT: Record<ActivityState, string> = {
   aktiv: "vermutlich aktiv",
   ruhe: "vermutlich ruhig",
   unbekannt: "Aktivität unbekannt",
-};
-
-const AKTIVITAETS_KLASSE: Record<ActivityState, string> = {
-  aktiv: "tag tag-accent-2",
-  ruhe: "tag tag-neutral",
-  unbekannt: "tag tag-neutral",
 };
 
 // Ab dieser Zieh-Distanz (px) schließt das Sheet statt zurückzuschnappen.
@@ -144,18 +139,15 @@ export function PlacePreviewSheet({ ort, beobachtungsLabel, onClose }: Props) {
             )}
           </div>
 
-          <h2 className="mt-4 text-lg">{ort.title}</h2>
-
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-muted">{formatDistance(ort.distance_m)}</span>
-            <span className={AKTIVITAETS_KLASSE[ort.activity]}>
-              {AKTIVITAETS_TEXT[ort.activity]}
-            </span>
+          <div className="mt-4">
+            <AktivitaetsBadge zustand={ort.activity} text={AKTIVITAETS_TEXT[ort.activity]} />
           </div>
 
-          <p className="mt-2 text-sm text-muted">
-            {ort.fresh_observables} aktuelle {beobachtungsLabel} · {ort.checkin_count}{" "}
-            Check-ins
+          <h2 className="mt-2 text-2xl">{ort.title}</h2>
+
+          <p className="mt-1 text-sm text-muted">
+            {formatDistance(ort.distance_m)} · {ort.fresh_observables} aktuelle{" "}
+            {beobachtungsLabel} · {ort.checkin_count} Check-ins
           </p>
 
           <div className="mt-5 flex gap-2">

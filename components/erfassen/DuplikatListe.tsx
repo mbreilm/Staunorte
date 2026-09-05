@@ -17,7 +17,7 @@ type Props = {
 export function DuplikatListe({ orte, onTrotzdemAnlegen }: Props) {
   return (
     <div className="flex flex-1 flex-col px-6 py-6">
-      <h1 className="text-lg">Meinst du diesen Ort?</h1>
+      <h1 className="text-2xl">Meinst du diesen Ort?</h1>
       <p className="mt-1 text-sm text-muted">
         In der Nähe gibt es schon {orte.length === 1 ? "einen Ort" : "diese Orte"}.
       </p>

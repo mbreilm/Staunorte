@@ -10,43 +10,43 @@ export default function ImpressumSeite() {
       </p>
 
       <section className="mt-6">
-        <h2 className="card-kicker">Diensteanbieter</h2>
+        <h6>Diensteanbieter</h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Vertretungsberechtigte Person
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">Kontakt</h2>
+        <h6>Kontakt</h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">Registereintrag</h2>
+        <h6>Registereintrag</h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Umsatzsteuer-Identifikationsnummer
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Inhaltlich verantwortlich (§ 18 Abs. 2 MStV)
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">Streitschlichtung</h2>
+        <h6>Streitschlichtung</h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
     </main>

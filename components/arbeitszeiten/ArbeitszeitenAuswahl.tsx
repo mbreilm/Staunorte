@@ -33,7 +33,7 @@ export function ArbeitszeitenAuswahl({ onAuswahl, onAbbrechen }: Props) {
   if (zeigeEigene) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-bg)] p-6">
-        <h1 className="text-lg">Eigene Zeiten</h1>
+        <h1 className="text-2xl">Eigene Zeiten</h1>
 
         <div className="mt-4 flex gap-2">
           {WOCHENTAG_KUERZEL.map((kuerzel, tag) => {
@@ -106,7 +106,7 @@ export function ArbeitszeitenAuswahl({ onAuswahl, onAbbrechen }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-bg)] p-6">
-      <h1 className="text-lg">Wie sind die Arbeitszeiten?</h1>
+      <h1 className="text-2xl">Wie sind die Arbeitszeiten?</h1>
 
       <div className="mt-4 flex flex-col gap-3">
         {PRESET_KACHELN.map((kachel) => (

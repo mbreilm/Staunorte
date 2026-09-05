@@ -9,9 +9,3 @@ export const AKTIVITAETS_TEXT_DETAIL: Record<ActivityState, string> = {
   ruhe: "Jetzt vermutlich Ruhe",
   unbekannt: "Zeiten unbekannt",
 };
-
-export const AKTIVITAETS_FARBE_DETAIL: Record<ActivityState, string> = {
-  aktiv: "tag tag-accent-2",
-  ruhe: "tag tag-neutral",
-  unbekannt: "tag tag-neutral",
-};

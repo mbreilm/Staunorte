@@ -10,26 +10,26 @@ export default function DatenschutzSeite() {
       </p>
 
       <section className="mt-6">
-        <h2 className="card-kicker">Verantwortlicher</h2>
+        <h6>Verantwortlicher</h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Erhobene Daten und Zwecke der Verarbeitung
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">Rechtsgrundlagen</h2>
+        <h6>Rechtsgrundlagen</h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Empfänger und Auftragsverarbeiter
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">
           {PLATZHALTER} Dazu zählen u. a. Supabase (Hosting, Datenbank,
           Authentifizierung, Speicher) und, bei erteilter Einwilligung,
@@ -39,42 +39,42 @@ export default function DatenschutzSeite() {
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Übermittlung in Drittländer
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">Speicherdauer</h2>
+        <h6>Speicherdauer</h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Rechte der betroffenen Person
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Beschwerderecht bei einer Aufsichtsbehörde
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Cookies und Analyse
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
 
       <section className="mt-5">
-        <h2 className="card-kicker">
+        <h6>
           Standortdaten und Fotos
-        </h2>
+        </h6>
         <p className="mt-1 text-sm text-muted">{PLATZHALTER}</p>
       </section>
     </main>
