@@ -71,14 +71,31 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                     type="button"
                     disabled={!freigeschaltet}
                     onClick={() => setAusgewaehlt(typ)}
-                    className="card elev-sm aspect-square flex-col items-center justify-center gap-0 text-3xl"
-                    style={
-                      freigeschaltet
-                        ? { background: "var(--color-accent-100)" }
-                        : { background: "var(--color-neutral-100)", color: "var(--color-neutral-400)" }
-                    }
+                    className="flex flex-col items-center gap-1.5"
                   >
-                    {freigeschaltet ? typ.icon : "❓"}
+                    <span
+                      className="elev-sm flex aspect-square w-full items-center justify-center rounded-2xl text-3xl"
+                      style={
+                        freigeschaltet
+                          ? { background: "var(--color-accent-100)" }
+                          : {
+                              background: "var(--color-neutral-200)",
+                              border: "1.5px dashed var(--color-neutral-400)",
+                            }
+                      }
+                    >
+                      <span className={freigeschaltet ? "" : "opacity-50 grayscale"}>
+                        {typ.icon}
+                      </span>
+                    </span>
+                    {/* Auch gesperrt sichtbar: sonst weiß niemand, wonach er
+                        noch Ausschau halten soll, um das Album zu vervollständigen. */}
+                    <span
+                      className="text-center text-[11.5px] leading-tight"
+                      style={{ color: "var(--color-neutral-700)" }}
+                    >
+                      {typ.kid_name ?? typ.name_de}
+                    </span>
                   </button>
                 );
               })}
@@ -96,6 +113,14 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
             className="absolute inset-0 bg-black/40"
           />
           <div className="dialog elev-lg relative z-10 w-full max-w-md rounded-b-none p-6 pb-8 text-center">
+            <button
+              type="button"
+              aria-label="Schließen"
+              onClick={() => setAusgewaehlt(null)}
+              className="btn btn-icon absolute right-3 top-3"
+            >
+              ×
+            </button>
             <div
               aria-hidden="true"
               className="mx-auto mb-4 h-1.5 w-12 rounded-full"

@@ -57,6 +57,7 @@ export function CheckinFlow({
   const [suchbegriff, setSuchbegriff] = useState("");
   const [ausgewaehlt, setAusgewaehlt] = useState<string[]>([]);
   const [neueFreischaltungen, setNeueFreischaltungen] = useState<ObservableType[]>([]);
+  const [albumFortschritt, setAlbumFortschritt] = useState<number | null>(null);
   const [fotoStatus, setFotoStatus] = useState<"keins" | "laedt" | "fertig" | "fehler">(
     "keins",
   );
@@ -141,6 +142,17 @@ export function CheckinFlow({
       (data?.new_unlocks ?? []).includes(typ.id),
     );
     setNeueFreischaltungen(freigeschaltet);
+
+    // Album-Fortschritt nur für die Feier-Anzeige - eine einzelne
+    // count-Abfrage, kein Duplikat der eigentlichen Freischalt-Logik.
+    if (freigeschaltet.length > 0 && user) {
+      const { count } = await supabase
+        .from("user_observable_unlocks")
+        .select("observable_type_id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      setAlbumFortschritt(count ?? null);
+    }
+
     setSchritt("erfolg");
   }
 
@@ -180,18 +192,22 @@ export function CheckinFlow({
       typ.name_de.toLowerCase().includes(suchbegriff.trim().toLowerCase()),
   );
 
+  const zeigtFeier = schritt === "erfolg" && neueFreischaltungen.length > 0;
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-bg)]">
-      <div className="flex justify-end p-4">
-        <button
-          type="button"
-          onClick={schliessen}
-          aria-label="Schließen"
-          className="btn btn-icon text-xl"
-        >
-          ×
-        </button>
-      </div>
+      {!zeigtFeier && (
+        <div className="flex justify-end p-4">
+          <button
+            type="button"
+            onClick={schliessen}
+            aria-label="Schließen"
+            className="btn btn-icon text-xl"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {schritt === "lade-standort" && (
         <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted">
@@ -299,44 +315,92 @@ export function CheckinFlow({
         </div>
       )}
 
-      {schritt === "erfolg" && (
+      {schritt === "erfolg" && !zeigtFeier && (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-          {neueFreischaltungen.length > 0 ? (
-            <>
-              <p className="card-kicker">Neu freigeschaltet!</p>
-              <div className="flex flex-col gap-3">
-                {neueFreischaltungen.map((typ, i) => (
-                  <div
-                    key={typ.id}
-                    style={{ animationDelay: `${i * 150}ms` }}
-                    className="card elev-sm flex animate-[stPop_400ms_ease-out_backwards] flex-row items-center gap-3 px-4 py-3 text-left"
-                  >
-                    <span className="text-3xl" aria-hidden="true">
-                      {typ.icon}
-                    </span>
-                    <span>
-                      <span className="card-title block">
-                        {typ.kid_name ?? typ.name_de}
-                      </span>
-                      {typ.kid_description && (
-                        <span className="card-body block">
-                          {typ.kid_description}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="text-base">Danke, dass du vorbeigeschaut hast! 👋</p>
-          )}
+          <p className="text-base">Danke, dass du vorbeigeschaut hast! 👋</p>
           <button
             type="button"
             onClick={() => setSchritt("foto-angebot")}
             className="btn btn-primary"
           >
             Weiter
+          </button>
+        </div>
+      )}
+
+      {zeigtFeier && (
+        <div
+          className="flex flex-1 flex-col items-center justify-center px-6 py-8 text-center"
+          style={{ background: "var(--color-accent)", color: "var(--color-bg)" }}
+        >
+          <span
+            className="text-xs font-bold uppercase"
+            style={{ color: "var(--color-accent-200)", letterSpacing: "0.09em" }}
+          >
+            Neu im Album
+          </span>
+
+          <div className="mt-5 flex flex-wrap justify-center gap-3.5">
+            {neueFreischaltungen.map((typ, i) => (
+              <span
+                key={typ.id}
+                style={{ background: "var(--color-bg)", animationDelay: `${i * 150}ms` }}
+                className="elev-lg flex h-28 w-28 flex-none animate-[stPop_500ms_cubic-bezier(.3,1.4,.5,1)_backwards] items-center justify-center rounded-full text-5xl"
+              >
+                {typ.icon}
+              </span>
+            ))}
+          </div>
+
+          <h2 className="mt-5 text-3xl" style={{ color: "var(--color-bg)" }}>
+            {neueFreischaltungen.length === 1
+              ? neueFreischaltungen[0].kid_name ?? neueFreischaltungen[0].name_de
+              : `${neueFreischaltungen.length} neue Fahrzeuge entdeckt!`}
+          </h2>
+          {neueFreischaltungen.length === 1 && neueFreischaltungen[0].kid_description && (
+            <p
+              className="mt-2 max-w-xs text-sm leading-relaxed"
+              style={{ color: "var(--color-accent-100)" }}
+            >
+              {neueFreischaltungen[0].kid_description}
+            </p>
+          )}
+
+          {albumFortschritt !== null && weitereTypen.length > 0 && (
+            <>
+              <p className="mt-5 text-sm font-bold" style={{ color: "var(--color-accent-200)" }}>
+                {albumFortschritt} von {weitereTypen.length} Fahrzeugen
+              </p>
+              <div
+                className="mt-2 h-2.5 w-full max-w-xs overflow-hidden rounded-full"
+                style={{ background: "var(--color-accent-700)" }}
+              >
+                <span
+                  className="block h-full rounded-full"
+                  style={{
+                    width: `${Math.min(100, (albumFortschritt / weitereTypen.length) * 100)}%`,
+                    background: "var(--color-bg)",
+                  }}
+                />
+              </div>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => router.push("/album")}
+            className="btn btn-block mx-auto mt-7 h-14 max-w-xs text-base"
+            style={{ background: "var(--color-bg)", color: "var(--color-accent-800)" }}
+          >
+            Im Album ansehen
+          </button>
+          <button
+            type="button"
+            onClick={() => setSchritt("foto-angebot")}
+            className="btn btn-ghost mx-auto mt-1 max-w-xs text-sm"
+            style={{ color: "var(--color-accent-100)" }}
+          >
+            Noch ein Foto hinzufügen?
           </button>
         </div>
       )}
