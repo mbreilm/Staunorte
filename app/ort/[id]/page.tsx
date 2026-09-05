@@ -104,7 +104,7 @@ export default async function OrtDetailSeite({
       {galerieFotos.length > 0 && <FotoGalerie fotos={galerieFotos} />}
 
       <div className="px-6 pt-6">
-        <h1 className="text-xl">{ort.title}</h1>
+        <h1 className="text-3xl">{ort.title}</h1>
         {ort.address && <p className="mt-1 text-sm text-muted">{ort.address}</p>}
         {ort.note && <p className="mt-3 text-sm">{ort.note}</p>}
 

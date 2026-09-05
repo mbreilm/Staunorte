@@ -13,7 +13,10 @@ export function FotoGalerie({ fotos }: { fotos: Foto[] }) {
     <>
       <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto">
         {fotos.map((foto) => (
-          <div key={foto.id} className="relative aspect-[4/3] w-full flex-none snap-start">
+          <div
+            key={foto.id}
+            className="relative aspect-[4/3] max-h-72 w-full flex-none snap-start"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration */}
             <img src={foto.url} alt="" className="h-full w-full object-cover" />
             <div className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2.5 py-1 text-xs text-white">
