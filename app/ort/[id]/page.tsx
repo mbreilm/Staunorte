@@ -33,11 +33,21 @@ export default async function OrtDetailSeite({
 
   if (!ort) notFound();
 
+  // Alle folgenden Abfragen hängen nur von `id`/`ort.category_id`/
+  // `ort.checkin_count` ab (schon bekannt) - deshalb ein einziges
+  // Promise.all statt mehrerer nacheinander await'eter Blöcke. Jeder
+  // zusätzliche sequenzielle Block addiert eine volle Netzwerk-Rundreise
+  // zu Supabase; das machte den Seitenaufbau spürbar langsam (bis zu
+  // mehreren Sekunden „Rendering" im Next.js-Dev-Indikator).
   const [
     { data: kategorie },
     { data: aktivitaet },
     { data: checkinsWoche },
     { data: position },
+    { data: fotos },
+    { data: beobachtungen },
+    { data: arbeitszeiten },
+    { data: aktivitaetsMuster },
   ] = await Promise.all([
     supabase
       .from("place_categories")
@@ -49,22 +59,17 @@ export default async function OrtDetailSeite({
     // nicht eingespielt wurde - dann einfach ohne Wochenzahl anzeigen.
     supabase.rpc("place_checkins_this_week", { p_place_id: id }),
     supabase.rpc("place_location", { p_place_id: id }),
-  ]);
-
-  const { data: fotos } = await supabase
-    .from("place_photos")
-    .select("id, storage_path, taken_at, created_at")
-    .eq("place_id", id)
-    .eq("moderation_status", "ok")
-    .order("created_at", { ascending: false });
-
-  const { data: beobachtungen } = await supabase
-    .from("v_place_observables")
-    .select("*")
-    .eq("place_id", id)
-    .order("last_seen_at", { ascending: false });
-
-  const [{ data: arbeitszeiten }, { data: aktivitaetsMuster }] = await Promise.all([
+    supabase
+      .from("place_photos")
+      .select("id, storage_path, taken_at, created_at")
+      .eq("place_id", id)
+      .eq("moderation_status", "ok")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("v_place_observables")
+      .select("*")
+      .eq("place_id", id)
+      .order("last_seen_at", { ascending: false }),
     supabase.from("place_hours").select("*").eq("place_id", id),
     ort.checkin_count >= WERTENDE_CHECKINS_FUER_MUSTER
       ? supabase.from("place_activity").select("*").eq("place_id", id)
