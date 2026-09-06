@@ -32,6 +32,7 @@ import {
   IconTruck,
   IconContainer,
   IconCheck,
+  IconHelpCircle,
   type IconProps,
 } from "@tabler/icons-react";
 import { IconBeton, IconStrassenbau, IconSpezial } from "@/components/icons/GroupIcons";
@@ -60,6 +61,7 @@ export const IconKonto = IconUser;
 export const IconAnmelden = IconLogin;
 export const IconEinstellungen = IconSettings;
 export const IconHaken = IconCheck;
+export const IconErklaerung = IconHelpCircle;
 
 // — Gruppen-Icons (docs/DESIGN-ICONS.md Abschnitt 2) —
 export { IconBeton, IconStrassenbau, IconSpezial };

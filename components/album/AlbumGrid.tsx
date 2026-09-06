@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { ObservableType, ObservableRarity } from "@/lib/supabase/types";
 import { trackEvent } from "@/lib/analytics/plausible";
 import { GruppenIcon } from "@/components/icons/GruppenIcon";
+import { fahrzeugBildUrl } from "@/lib/fahrzeugbild";
 
 const SELTENHEIT_TEXT: Record<ObservableRarity, string> = {
   haeufig: "Häufig",
@@ -26,6 +27,8 @@ type Props = {
 
 export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
   const [ausgewaehlt, setAusgewaehlt] = useState<ObservableType | null>(null);
+
+  const bildUrl = (typ: ObservableType) => fahrzeugBildUrl(typ.image_path);
 
   useEffect(() => {
     trackEvent("Album geöffnet");
@@ -76,7 +79,7 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
         {[...gruppen.entries()].map(([gruppe, gruppenTypen]) => (
           <div key={gruppe}>
             {gruppe && <h6 className="mb-2">{gruppe}</h6>}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-[10px]">
               {gruppenTypen.map((typ) => {
                 const freigeschaltet = angemeldet && freischaltungNachTyp.has(typ.id);
                 return (
@@ -87,15 +90,16 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                     onClick={() => setAusgewaehlt(typ)}
                     className="flex flex-col items-center gap-1.5"
                   >
-                    {/* Gesperrt wird über die Icon-Farbe gezeigt, nicht über
-                        grayscale: Strich-Icons haben keine eigene Farbe, die
-                        entsättigt werden könnte. */}
+                    {/* Mit Foto: gesperrt wird entsättigt und abgedunkelt.
+                        Ohne Foto bleibt das Gruppen-Icon, dort geht das nur
+                        über die Farbe - ein Strich-Icon hat nichts zu
+                        entsättigen. */}
                     <span
-                      className="elev-sm flex aspect-square w-full items-center justify-center rounded-2xl"
+                      className={`flex aspect-square w-full items-center justify-center overflow-hidden rounded-[22px] ${freigeschaltet ? "elev-sm" : ""}`}
                       style={
                         freigeschaltet
                           ? {
-                              background: "var(--color-accent-100)",
+                              background: "var(--color-surface)",
                               color: "var(--color-accent-800)",
                             }
                           : {
@@ -105,7 +109,22 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                             }
                       }
                     >
-                      <GruppenIcon groupName={typ.group_name} size={40} />
+                      {bildUrl(typ) ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration
+                        <img
+                          src={bildUrl(typ)!}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className={
+                            freigeschaltet
+                              ? "h-full w-full object-cover"
+                              : "h-full w-full object-cover opacity-60 grayscale"
+                          }
+                        />
+                      ) : (
+                        <GruppenIcon groupName={typ.group_name} size={40} />
+                      )}
                     </span>
                     {/* Auch gesperrt sichtbar: sonst weiß niemand, wonach er
                         noch Ausschau halten soll, um das Album zu vervollständigen. */}
@@ -145,12 +164,24 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
               className="mx-auto mb-4 h-1.5 w-12 rounded-full"
               style={{ background: "var(--color-neutral-400)" }}
             />
-            <span
-              className="inline-flex items-center justify-center"
-              style={{ color: "var(--color-accent-800)" }}
-            >
-              <GruppenIcon groupName={ausgewaehlt.group_name} size={64} />
-            </span>
+            {bildUrl(ausgewaehlt) ? (
+              <span className="block overflow-hidden rounded-2xl">
+                {/* eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration */}
+                <img
+                  src={bildUrl(ausgewaehlt)!}
+                  alt={`Foto: ${ausgewaehlt.name_de}`}
+                  decoding="async"
+                  className="h-48 w-full object-cover"
+                />
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center justify-center"
+                style={{ color: "var(--color-accent-800)" }}
+              >
+                <GruppenIcon groupName={ausgewaehlt.group_name} size={64} />
+              </span>
+            )}
             <h2 className="mt-3 text-lg">{ausgewaehlt.kid_name ?? ausgewaehlt.name_de}</h2>
             <p className="text-sm text-muted">{ausgewaehlt.name_de}</p>
             {ausgewaehlt.kid_description && (
@@ -165,6 +196,13 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
               {ausgewaehlteFreischaltung.places &&
                 ` an ${ausgewaehlteFreischaltung.places.title}`}
             </p>
+            {/* Pflichtangabe: die Fotos stehen unter CC-BY/CC-BY-SA, das
+                verlangt die Nennung von Urheber und Lizenz am Bild. */}
+            {ausgewaehlt.image_credit && (
+              <p className="mt-2 text-[10.5px] leading-snug" style={{ color: "var(--color-neutral-500)" }}>
+                {ausgewaehlt.image_credit}
+              </p>
+            )}
           </div>
         </div>
       )}

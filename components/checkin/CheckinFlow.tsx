@@ -12,6 +12,7 @@ import {
 } from "@/lib/erfassen/fotoUpload";
 import { StandortAuswahl } from "@/components/erfassen/StandortAuswahl";
 import { GruppenIcon } from "@/components/icons/GruppenIcon";
+import { IconErklaerung } from "@/lib/icons";
 import { trackEvent } from "@/lib/analytics/plausible";
 
 type Props = {
@@ -58,6 +59,7 @@ export function CheckinFlow({
   const [zuWeitEntfernt, setZuWeitEntfernt] = useState<number | null>(null);
   const [weitereTypen, setWeitereTypen] = useState<ObservableType[]>([]);
   const [suchbegriff, setSuchbegriff] = useState("");
+  const [zeigeErklaerungen, setZeigeErklaerungen] = useState(false);
   const [ausgewaehlt, setAusgewaehlt] = useState<string[]>([]);
   const [neueFreischaltungen, setNeueFreischaltungen] = useState<ObservableType[]>([]);
   const [albumFortschritt, setAlbumFortschritt] = useState<number | null>(null);
@@ -76,6 +78,18 @@ export function CheckinFlow({
     () => new Set(bereitsGemeldet.map((b) => b.observable_type_id)),
     [bereitsGemeldet],
   );
+
+  // v_place_observables liefert kid_description nicht mit - für die bereits
+  // gemeldeten Chips kommt der Text daher aus dem ohnehin geladenen Katalog.
+  const beschreibungNachId = useMemo(
+    () => new Map(weitereTypen.map((typ) => [typ.id, typ.kid_description])),
+    [weitereTypen],
+  );
+  const hatErklaerungen = beschreibungNachId.size > 0;
+
+  function erklaerungFuer(typId: string) {
+    return zeigeErklaerungen ? beschreibungNachId.get(typId) ?? null : null;
+  }
 
   useEffect(() => {
     standortHolen();
@@ -262,13 +276,29 @@ export function CheckinFlow({
             mit der Zeit von selbst.
           </p>
 
+          {/* Wer die Fahrzeuge nicht auseinanderhält, blendet die Erklärungen
+              ein. Bewusst ausgeschaltet vorbelegt: der schnelle Weg (Chip
+              antippen) bleibt der kurze - siehe 15-Sekunden-Leitplanke. */}
+          {hatErklaerungen && (
+            <button
+              type="button"
+              onClick={() => setZeigeErklaerungen((vorher) => !vorher)}
+              aria-pressed={zeigeErklaerungen}
+              className="btn btn-ghost mt-1 min-h-11 gap-1.5 text-[13.5px]"
+            >
+              <IconErklaerung size={18} />
+              {zeigeErklaerungen ? "Erklärungen ausblenden" : "Was ist was?"}
+            </button>
+          )}
+
           {gemeldetSortiert.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className={zeigeErklaerungen ? "mt-4 flex flex-col gap-2" : "mt-4 flex flex-wrap gap-2"}>
               {gemeldetSortiert.map((typ) => (
                 <Chip
                   key={typ.observable_type_id}
                   groupName={typ.group_name}
                   name={typ.name_de}
+                  beschreibung={erklaerungFuer(typ.observable_type_id)}
                   aktiv={ausgewaehlt.includes(typ.observable_type_id)}
                   onClick={() =>
                     setAusgewaehlt((vorher) =>
@@ -291,12 +321,13 @@ export function CheckinFlow({
               className="input"
             />
             {gefundeneWeitere.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className={zeigeErklaerungen ? "mt-2 flex flex-col gap-2" : "mt-2 flex flex-wrap gap-2"}>
                 {gefundeneWeitere.map((typ) => (
                   <Chip
                     key={typ.id}
                     groupName={typ.group_name}
                     name={typ.name_de}
+                    beschreibung={erklaerungFuer(typ.id)}
                     aktiv={ausgewaehlt.includes(typ.id)}
                     onClick={() =>
                       setAusgewaehlt((vorher) =>
@@ -482,14 +513,20 @@ export function CheckinFlow({
   );
 }
 
+/**
+ * Ohne `beschreibung` ein kompakter Chip zum schnellen Antippen, mit
+ * `beschreibung` eine volle Zeile mit Erklärungstext darunter.
+ */
 function Chip({
   groupName,
   name,
+  beschreibung,
   aktiv,
   onClick,
 }: {
   groupName: string | null;
   name: string;
+  beschreibung?: string | null;
   aktiv: boolean;
   onClick: () => void;
 }) {
@@ -498,7 +535,11 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={aktiv}
-      className="btn min-h-12 gap-2.5 pl-1.5 pr-4"
+      className={
+        beschreibung
+          ? "btn min-h-12 w-full justify-start gap-2.5 py-2.5 pl-1.5 pr-4 text-left"
+          : "btn min-h-12 gap-2.5 pl-1.5 pr-4"
+      }
       style={
         aktiv
           ? { background: "var(--color-accent-100)", color: "var(--color-accent-800)", border: "2px solid var(--color-accent-300)" }
@@ -507,12 +548,19 @@ function Chip({
     >
       <span
         aria-hidden="true"
-        className="flex h-9 w-9 items-center justify-center rounded-full"
+        className="flex h-9 w-9 flex-none items-center justify-center rounded-full"
         style={{ background: aktiv ? "var(--color-accent-200)" : "var(--color-neutral-200)" }}
       >
         <GruppenIcon groupName={groupName} size={22} />
       </span>
-      <b className="text-[14.5px]">{name}</b>
+      {beschreibung ? (
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <b className="text-[14.5px]">{name}</b>
+          <span className="text-xs font-normal leading-snug text-muted">{beschreibung}</span>
+        </span>
+      ) : (
+        <b className="text-[14.5px]">{name}</b>
+      )}
     </button>
   );
 }

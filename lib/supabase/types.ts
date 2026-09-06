@@ -233,6 +233,8 @@ export type Database = {
           icon: string | null; // Emoji
           kid_description: string | null;
           is_active: boolean;
+          image_path: string | null; // Pfad im Bucket observable-photos
+          image_credit: string | null; // Urheber + Lizenz, Pflicht sobald image_path gesetzt
         };
         Insert: {
           id: string;
@@ -248,6 +250,8 @@ export type Database = {
           icon?: string | null;
           kid_description?: string | null;
           is_active?: boolean;
+          image_path?: string | null;
+          image_credit?: string | null;
         };
         Update: Partial<
           Database["public"]["Tables"]["observable_types"]["Insert"]
