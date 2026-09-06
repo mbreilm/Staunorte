@@ -6,8 +6,10 @@ import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import type { ObservableType, PlaceObservableView } from "@/lib/supabase/types";
 import { formatDistance } from "@/lib/geo/distance";
-import { leseExif } from "@/lib/geo/exif";
-import { ladeFotoHoch } from "@/lib/erfassen/fotoUpload";
+import {
+  ladeFotosHoch,
+  type MehrfachUploadFortschritt,
+} from "@/lib/erfassen/fotoUpload";
 import { StandortAuswahl } from "@/components/erfassen/StandortAuswahl";
 import { GruppenIcon } from "@/components/icons/GruppenIcon";
 import { trackEvent } from "@/lib/analytics/plausible";
@@ -59,8 +61,11 @@ export function CheckinFlow({
   const [ausgewaehlt, setAusgewaehlt] = useState<string[]>([]);
   const [neueFreischaltungen, setNeueFreischaltungen] = useState<ObservableType[]>([]);
   const [albumFortschritt, setAlbumFortschritt] = useState<number | null>(null);
-  const [fotoStatus, setFotoStatus] = useState<"keins" | "laedt" | "fertig" | "fehler">(
-    "keins",
+  const [fotoStatus, setFotoStatus] = useState<
+    "keins" | "laedt" | "fertig" | "teilweise" | "fehler"
+  >("keins");
+  const [fotoFortschritt, setFotoFortschritt] = useState<MehrfachUploadFortschritt | null>(
+    null,
   );
 
   const gemeldetSortiert = useMemo(
@@ -167,18 +172,18 @@ export function CheckinFlow({
     await eingecheckt();
   }
 
-  async function aufFotoAusgewaehlt(datei: File) {
+  async function aufFotosAusgewaehlt(dateien: File[]) {
     if (!user) return;
     setFotoStatus("laedt");
-    const exif = await leseExif(datei);
-    const ergebnis = await ladeFotoHoch({
-      datei,
+    const { erfolgreich, fehlgeschlagen } = await ladeFotosHoch({
+      dateien,
       placeId,
       hochgeladenVon: user.id,
-      koordinaten: exif.lat !== null && exif.lon !== null ? { lat: exif.lat, lon: exif.lon } : null,
-      aufgenommenAm: exif.aufgenommenAm,
+      aufFortschritt: setFotoFortschritt,
     });
-    setFotoStatus(ergebnis.ok ? "fertig" : "fehler");
+    setFotoStatus(
+      fehlgeschlagen === 0 ? "fertig" : erfolgreich > 0 ? "teilweise" : "fehler",
+    );
   }
 
   function schliessen() {
@@ -430,21 +435,25 @@ export function CheckinFlow({
 
       {schritt === "foto-angebot" && (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-          <p className="text-base">Magst du noch ein Foto hinzufügen?</p>
+          <p className="text-base">Magst du noch Fotos hinzufügen?</p>
           <input
             ref={fotoInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
+            multiple
             hidden
             onChange={(e) => {
-              const datei = e.target.files?.[0];
-              if (datei) aufFotoAusgewaehlt(datei);
+              const dateien = Array.from(e.target.files ?? []);
+              if (dateien.length > 0) aufFotosAusgewaehlt(dateien);
             }}
           />
           {fotoStatus === "fertig" ? (
             <p className="text-sm" style={{ color: "var(--color-accent-2-700)" }}>
               Danke fürs Foto!
+            </p>
+          ) : fotoStatus === "teilweise" ? (
+            <p className="text-sm" style={{ color: "var(--color-accent-700)" }}>
+              Nicht alle Fotos konnten hochgeladen werden.
             </p>
           ) : fotoStatus === "fehler" ? (
             <p className="text-sm" style={{ color: "var(--color-accent-700)" }}>
@@ -457,11 +466,15 @@ export function CheckinFlow({
               onClick={() => fotoInputRef.current?.click()}
               className="btn btn-primary"
             >
-              {fotoStatus === "laedt" ? "Wird hochgeladen …" : "Foto auswählen"}
+              {fotoStatus === "laedt"
+                ? fotoFortschritt && fotoFortschritt.gesamt > 1
+                  ? `Foto ${fotoFortschritt.index + 1} von ${fotoFortschritt.gesamt} …`
+                  : "Wird hochgeladen …"
+                : "Fotos auswählen"}
             </button>
           )}
           <button type="button" onClick={schliessen} className="btn btn-ghost text-sm">
-            {fotoStatus === "fertig" ? "Fertig" : "Überspringen"}
+            {fotoStatus === "fertig" || fotoStatus === "teilweise" ? "Fertig" : "Überspringen"}
           </button>
         </div>
       )}

@@ -5,14 +5,17 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import type { ObservableType, PlaceNearby } from "@/lib/supabase/types";
-import { leseExif, type ExifDaten } from "@/lib/geo/exif";
+import { leseExif } from "@/lib/geo/exif";
 import {
   ladeEntwurf,
   speichereEntwurf,
   loescheEntwurf,
   type OrtEntwurf,
 } from "@/lib/erfassen/entwurf";
-import { ladeFotoHoch, type UploadFortschritt } from "@/lib/erfassen/fotoUpload";
+import {
+  ladeFotosHoch,
+  type MehrfachUploadFortschritt,
+} from "@/lib/erfassen/fotoUpload";
 import { baueZeilen } from "@/lib/arbeitszeiten/zeilen";
 import { speicherArbeitszeiten } from "@/lib/arbeitszeiten/speichern";
 import { StandortAuswahl } from "@/components/erfassen/StandortAuswahl";
@@ -46,8 +49,7 @@ export default function OrtErfassen() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const fotoInputRef = useRef<HTMLInputElement>(null);
-  const fotoRef = useRef<File | null>(null);
-  const exifDatenRef = useRef<ExifDaten>({ lat: null, lon: null, aufgenommenAm: null });
+  const fotosRef = useRef<File[]>([]);
 
   const [schritt, setSchritt] = useState<Schritt>("foto");
   const [entwurf, setEntwurf] = useState<OrtEntwurf>(ladeEntwurf);
@@ -60,7 +62,9 @@ export default function OrtErfassen() {
   const [beobachtungsLabel, setBeobachtungsLabel] = useState("");
   const [ladeStandort, setLadeStandort] = useState(false);
   const [speichertGerade, setSpeichertGerade] = useState(false);
-  const [fotoFortschritt, setFotoFortschritt] = useState<UploadFortschritt | null>(null);
+  const [fotoFortschritt, setFotoFortschritt] = useState<MehrfachUploadFortschritt | null>(
+    null,
+  );
   const [fehler, setFehler] = useState<string | null>(null);
 
   useEffect(() => {
@@ -158,13 +162,14 @@ export default function OrtErfassen() {
     }
   }
 
-  async function aufFotoAusgewaehlt(datei: File) {
-    fotoRef.current = datei;
+  async function aufFotoAusgewaehlt(dateien: File[]) {
+    fotosRef.current = dateien;
     setLadeStandort(true);
 
-    // EXIF nur einmal lesen - das Datum wird erst beim Upload gebraucht,
-    // die Koordinaten ggf. sofort für den Standort-Schritt.
-    exifDatenRef.current = await leseExif(datei);
+    // Nur das erste Foto liefert den Standort-Vorschlag - jedes Foto
+    // bekommt sein eigenes EXIF erst beim Upload (ladeFotosHoch), hier
+    // reicht ein einzelner Lesevorgang für den Standort-Schritt.
+    const { lat, lon } = await leseExif(dateien[0]);
 
     if (standortBereitsBekannt && entwurf.lat !== null && entwurf.lon !== null) {
       // Standort schon aus einem früheren Entwurf bekannt - nicht erneut abfragen.
@@ -173,7 +178,6 @@ export default function OrtErfassen() {
       return;
     }
 
-    const { lat, lon } = exifDatenRef.current;
     if (lat !== null && lon !== null) {
       setLadeStandort(false);
       setSchritt("standort");
@@ -254,20 +258,15 @@ export default function OrtErfassen() {
       await speicherArbeitszeiten(supabase, neueId, baueZeilen(entwurf.arbeitszeiten));
     }
 
-    // Foto hochladen (T8) - erst jetzt möglich, die RLS-Regel auf
+    // Fotos hochladen (T8) - erst jetzt möglich, die RLS-Regel auf
     // place_photos verlangt einen bestehenden Check-in. Ein Fehlschlag
     // hier verwirft nicht den bereits angelegten Ort, siehe TICKETS.md T8
     // ("ohne den ganzen Flow zu verlieren").
-    if (neueId && fotoRef.current && user) {
-      await ladeFotoHoch({
-        datei: fotoRef.current,
+    if (neueId && fotosRef.current.length > 0 && user) {
+      await ladeFotosHoch({
+        dateien: fotosRef.current,
         placeId: neueId,
         hochgeladenVon: user.id,
-        koordinaten:
-          exifDatenRef.current.lat !== null && exifDatenRef.current.lon !== null
-            ? { lat: exifDatenRef.current.lat, lon: exifDatenRef.current.lon }
-            : null,
-        aufgenommenAm: exifDatenRef.current.aufgenommenAm,
         aufFortschritt: setFotoFortschritt,
       });
     }
@@ -292,17 +291,18 @@ export default function OrtErfassen() {
         </div>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
           <p className="text-base">
-            Mach ein Foto oder wähl eins aus deiner Galerie, um loszulegen.
+            Mach ein oder mehrere Fotos, oder wähl welche aus deiner Galerie,
+            um loszulegen.
           </p>
           <input
             ref={fotoInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
+            multiple
             hidden
             onChange={(e) => {
-              const datei = e.target.files?.[0];
-              if (datei) aufFotoAusgewaehlt(datei);
+              const dateien = Array.from(e.target.files ?? []);
+              if (dateien.length > 0) aufFotoAusgewaehlt(dateien);
             }}
           />
           <button
@@ -311,7 +311,7 @@ export default function OrtErfassen() {
             onClick={() => fotoInputRef.current?.click()}
             className="btn btn-primary h-12 w-full max-w-xs text-base"
           >
-            {ladeStandort ? "Einen Moment …" : "Foto auswählen"}
+            {ladeStandort ? "Einen Moment …" : "Fotos auswählen"}
           </button>
         </div>
       </main>
@@ -478,10 +478,19 @@ export default function OrtErfassen() {
 
 function fotoSpeicherText(
   speichertGerade: boolean,
-  fotoFortschritt: UploadFortschritt | null,
+  fotoFortschritt: MehrfachUploadFortschritt | null,
 ): string {
   if (!speichertGerade) return "Ort speichern";
-  if (fotoFortschritt === "verkleinern") return "Foto wird verkleinert …";
-  if (fotoFortschritt === "hochladen") return "Foto wird hochgeladen …";
-  return "Wird gespeichert …";
+  if (!fotoFortschritt) return "Wird gespeichert …";
+
+  if (fotoFortschritt.gesamt <= 1) {
+    return fotoFortschritt.stufe === "verkleinern"
+      ? "Foto wird verkleinert …"
+      : "Foto wird hochgeladen …";
+  }
+
+  const zaehler = `Foto ${fotoFortschritt.index + 1} von ${fotoFortschritt.gesamt}`;
+  return fotoFortschritt.stufe === "verkleinern"
+    ? `${zaehler} wird verkleinert …`
+    : `${zaehler} wird hochgeladen …`;
 }
