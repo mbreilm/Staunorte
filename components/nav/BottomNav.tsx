@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IconKarte, IconAlbum, IconKonto } from "@/lib/icons";
 
 const TABS = [
-  { href: "/", label: "Karte", icon: MapIcon },
-  { href: "/album", label: "Album", icon: AlbumIcon },
-  { href: "/konto", label: "Profil", icon: ProfilIcon },
+  { href: "/", label: "Karte", icon: IconKarte },
+  { href: "/album", label: "Album", icon: IconAlbum },
+  { href: "/konto", label: "Profil", icon: IconKonto },
 ];
 
 // Nur auf den drei Haupt-Tabs sichtbar - nicht auf Detail-/Erfassen-/
@@ -36,7 +37,7 @@ export function BottomNav() {
               }}
               aria-current={aktiv ? "page" : undefined}
             >
-              <Icon />
+              <Icon size={20} />
               <span className="text-[11px] font-medium">{label}</span>
             </Link>
           );
@@ -46,41 +47,3 @@ export function BottomNav() {
   );
 }
 
-function MapIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path d="M9 4v14M15 6v14" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  );
-}
-
-function AlbumIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="4" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
-      <rect x="13" y="4" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
-      <rect x="3" y="14" width="8" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
-      <rect x="13" y="14" width="8" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  );
-}
-
-function ProfilIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.8" />
-      <path
-        d="M4.5 20c1.4-3.8 4.2-5.8 7.5-5.8s6.1 2 7.5 5.8"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}

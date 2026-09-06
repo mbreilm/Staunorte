@@ -1,6 +1,7 @@
 "use client";
 
 import type { ObservableType } from "@/lib/supabase/types";
+import { GruppenIcon } from "@/components/icons/GruppenIcon";
 
 type Props = {
   typen: ObservableType[];
@@ -47,7 +48,7 @@ export function FahrzeugChips({ typen, ausgewaehlt, onToggle }: Props) {
                     className="flex h-8 w-8 items-center justify-center rounded-full"
                     style={{ background: aktiv ? "var(--color-accent-200)" : "var(--color-neutral-200)" }}
                   >
-                    {typ.icon}
+                    <GruppenIcon groupName={typ.group_name} size={20} />
                   </span>
                   <b className="text-[13.5px]">{typ.name_de}</b>
                 </button>

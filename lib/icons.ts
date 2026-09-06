@@ -6,6 +6,9 @@ import type { ComponentType } from "react";
 import {
   IconMapPinCheck,
   IconMapPin,
+  IconMap,
+  IconChevronLeft,
+  IconPhoto,
   IconEye,
   IconEyeOff,
   IconLayoutGrid,
@@ -28,6 +31,7 @@ import {
   IconBulldozer,
   IconTruck,
   IconContainer,
+  IconCheck,
   type IconProps,
 } from "@tabler/icons-react";
 import { IconBeton, IconStrassenbau, IconSpezial } from "@/components/icons/GroupIcons";
@@ -35,6 +39,9 @@ import { IconBeton, IconStrassenbau, IconSpezial } from "@/components/icons/Grou
 // — UI-Icons (docs/DESIGN-ICONS.md Abschnitt 4) —
 export const IconCheckin = IconMapPinCheck;
 export const IconStandort = IconMapPin;
+export const IconKarte = IconMap;
+export const IconZurueck = IconChevronLeft;
+export const IconFotoPlatzhalter = IconPhoto;
 export const IconFrisch = IconEye;
 export const IconVeraltet = IconEyeOff;
 export const IconAlbum = IconLayoutGrid;
@@ -52,6 +59,7 @@ export const IconMelden = IconFlag;
 export const IconKonto = IconUser;
 export const IconAnmelden = IconLogin;
 export const IconEinstellungen = IconSettings;
+export const IconHaken = IconCheck;
 
 // — Gruppen-Icons (docs/DESIGN-ICONS.md Abschnitt 2) —
 export { IconBeton, IconStrassenbau, IconSpezial };

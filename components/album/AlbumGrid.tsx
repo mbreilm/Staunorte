@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ObservableType, ObservableRarity } from "@/lib/supabase/types";
 import { trackEvent } from "@/lib/analytics/plausible";
+import { GruppenIcon } from "@/components/icons/GruppenIcon";
 
 const SELTENHEIT_TEXT: Record<ObservableRarity, string> = {
   haeufig: "Häufig",
@@ -86,20 +87,25 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                     onClick={() => setAusgewaehlt(typ)}
                     className="flex flex-col items-center gap-1.5"
                   >
+                    {/* Gesperrt wird über die Icon-Farbe gezeigt, nicht über
+                        grayscale: Strich-Icons haben keine eigene Farbe, die
+                        entsättigt werden könnte. */}
                     <span
-                      className="elev-sm flex aspect-square w-full items-center justify-center rounded-2xl text-3xl"
+                      className="elev-sm flex aspect-square w-full items-center justify-center rounded-2xl"
                       style={
                         freigeschaltet
-                          ? { background: "var(--color-accent-100)" }
+                          ? {
+                              background: "var(--color-accent-100)",
+                              color: "var(--color-accent-800)",
+                            }
                           : {
                               background: "var(--color-neutral-200)",
                               border: "1.5px dashed var(--color-neutral-400)",
+                              color: "var(--color-neutral-500)",
                             }
                       }
                     >
-                      <span className={freigeschaltet ? "" : "opacity-50 grayscale"}>
-                        {typ.icon}
-                      </span>
+                      <GruppenIcon groupName={typ.group_name} size={40} />
                     </span>
                     {/* Auch gesperrt sichtbar: sonst weiß niemand, wonach er
                         noch Ausschau halten soll, um das Album zu vervollständigen. */}
@@ -139,7 +145,12 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
               className="mx-auto mb-4 h-1.5 w-12 rounded-full"
               style={{ background: "var(--color-neutral-400)" }}
             />
-            <span className="text-6xl">{ausgewaehlt.icon}</span>
+            <span
+              className="inline-flex items-center justify-center"
+              style={{ color: "var(--color-accent-800)" }}
+            >
+              <GruppenIcon groupName={ausgewaehlt.group_name} size={64} />
+            </span>
             <h2 className="mt-3 text-lg">{ausgewaehlt.kid_name ?? ausgewaehlt.name_de}</h2>
             <p className="text-sm text-muted">{ausgewaehlt.name_de}</p>
             {ausgewaehlt.kid_description && (

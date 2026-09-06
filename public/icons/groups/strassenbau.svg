@@ -11,9 +11,9 @@
   class="icon icon-tabler icons-tabler-outline icon-tabler-strassenbau"
 >
   <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-  <path d="M4 16a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
-  <path d="M16 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-  <path d="M18 19h-11" />
-  <path d="M7 13v-2h7v4h6" />
-  <path d="M9 11v-3a1 1 0 0 1 1 -1h2v4" />
+  <path d="M15 16a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+  <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path d="M7 19h11" />
+  <path d="M15 15v-4h-10v4h10" />
+  <path d="M12 11v-3a1 1 0 0 0 -1 -1h-3v4" />
 </svg>

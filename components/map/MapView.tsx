@@ -10,12 +10,14 @@ import {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { createClient } from "@/lib/supabase/client";
-import type { PlaceNearby } from "@/lib/supabase/types";
+import type { ObservableType, PlaceNearby } from "@/lib/supabase/types";
 import { haversineMeters } from "@/lib/geo/distance";
 import { richteMaplibreWorkerEin } from "@/lib/maplibre/setup";
 import { registerMarkerIcons, markerIconKey } from "./markerIcons";
 import { LocationHint } from "./LocationHint";
 import { PlacePreviewSheet } from "./PlacePreviewSheet";
+import { FilterPillRow } from "./FilterPillRow";
+import { FilterSheet } from "./FilterSheet";
 
 // Fallback, falls die Env-Variablen mal fehlen - München-Zentrum.
 const STANDARD_LAT = Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? "48.1372");
@@ -40,6 +42,12 @@ type OrtEigenschaften = {
 // Baut aus den places_nearby()-Zeilen eine GeoJSON-FeatureCollection, wie
 // MapLibre sie für Quellen erwartet. Die Icon-Auswahl (Farbe/Rand/Punkt)
 // wird hier einmal pro Ort berechnet und als iconKey mitgegeben.
+// "1500" statt "1.5 km" bei kleinen Umkreisen, damit der Wert in der Pille
+// nicht auf eine Nachkommastelle gerundet und dadurch ungenau wirkt.
+function formatiereRadius(meter: number): string {
+  return meter >= 1000 ? `${Math.round(meter / 1000)} km` : `${meter} m`;
+}
+
 function baueFeatureCollection(
   orte: PlaceNearby[],
 ): GeoJSON.FeatureCollection<GeoJSON.Point, OrtEigenschaften> {
@@ -84,6 +92,33 @@ export function MapView() {
   const [ausgewaehlterOrt, setAusgewaehlterOrt] = useState<PlaceNearby | null>(
     null,
   );
+
+  // Filter (T-Filter): Radius-Override, "Jetzt aktiv", "Fahrzeuge aktuell
+  // gesehen" und Fahrzeugtyp-Auswahl. Die eigentliche Filterlogik läuft in
+  // der Datenbank (places_nearby(), CLAUDE.md Regel 5) - das Frontend hält
+  // hier nur die Auswahl und lädt bei Änderung neu.
+  const [observableTypes, setObservableTypes] = useState<ObservableType[]>([]);
+  const [filterOffen, setFilterOffen] = useState(false);
+  const [radiusUeberschreibungM, setRadiusUeberschreibungM] = useState<
+    number | null
+  >(null);
+  const [radiusAnzeigeM, setRadiusAnzeigeM] = useState(3000);
+  const [nurAktiv, setNurAktiv] = useState(false);
+  const [nurFahrzeugeSichtbar, setNurFahrzeugeSichtbar] = useState(false);
+  const [ausgewaehlteTypIds, setAusgewaehlteTypIds] = useState<string[]>([]);
+
+  // ladeOrte() entsteht erst innerhalb des Karten-Effekts (unten) und
+  // schließt dort über die Map-Instanz; die Filter-Werte kommen deshalb über
+  // eine Ref herein statt über Closure-Variablen, die beim ersten Rendern
+  // eingefroren wären.
+  const filterRef = useRef({
+    radiusUeberschreibungM: null as number | null,
+    nurAktiv: false,
+    nurFahrzeugeSichtbar: false,
+    ausgewaehlteTypIds: [] as string[],
+  });
+  const ladeOrteRef = useRef<() => void>(() => {});
+  const kartenBereitRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -135,24 +170,31 @@ export function MapView() {
     async function ladeOrte() {
       const zentrum = map.getCenter();
       const ecke = map.getBounds().getNorthEast();
-      const radius = Math.min(
-        MAX_RADIUS_M,
-        Math.max(
-          MIN_RADIUS_M,
-          Math.round(
-            haversineMeters(
-              { lat: zentrum.lat, lon: zentrum.lng },
-              { lat: ecke.lat, lon: ecke.lng },
+      const radius =
+        filterRef.current.radiusUeberschreibungM ??
+        Math.min(
+          MAX_RADIUS_M,
+          Math.max(
+            MIN_RADIUS_M,
+            Math.round(
+              haversineMeters(
+                { lat: zentrum.lat, lon: zentrum.lng },
+                { lat: ecke.lat, lon: ecke.lng },
+              ),
             ),
           ),
-        ),
-      );
+        );
+      setRadiusAnzeigeM(radius);
 
       const { data, error } = await supabase.rpc("places_nearby", {
         p_lat: zentrum.lat,
         p_lon: zentrum.lng,
         p_radius_m: radius,
         p_category: KATEGORIE,
+        p_only_active: filterRef.current.nurAktiv,
+        p_observable_type_ids: filterRef.current.ausgewaehlteTypIds.length
+          ? filterRef.current.ausgewaehlteTypIds
+          : null,
       });
 
       if (error) {
@@ -163,10 +205,18 @@ export function MapView() {
         return;
       }
 
-      orteRef.current = data ?? [];
+      // "Fahrzeuge aktuell gesehen" ist kein DB-Parameter: places_nearby()
+      // liefert fresh_observables schon mit, ein Nachfiltern hier spart einen
+      // eigenen RPC-Parameter für ein rein clientseitiges Anzeigekriterium.
+      const gefiltert = filterRef.current.nurFahrzeugeSichtbar
+        ? (data ?? []).filter((ort) => ort.fresh_observables > 0)
+        : (data ?? []);
+
+      orteRef.current = gefiltert;
       const quelle = map.getSource("orte") as GeoJSONSource | undefined;
-      quelle?.setData(baueFeatureCollection(data ?? []));
+      quelle?.setData(baueFeatureCollection(gefiltert));
     }
+    ladeOrteRef.current = ladeOrte;
 
     // Entprellt auf 300 ms, damit während des Schiebens/Zoomens nicht bei
     // jedem Zwischenschritt neu geladen wird.
@@ -277,6 +327,7 @@ export function MapView() {
       // benutzbar (Zentrum München/Fallback).
       setZeigeStandortHinweis(true);
 
+      kartenBereitRef.current = true;
       ladeOrte();
     });
 
@@ -288,6 +339,50 @@ export function MapView() {
       mapRef.current = null;
     };
   }, []);
+
+  // Fahrzeugtyp-Katalog für den Filter (Gruppen kommen aus der DB, CLAUDE.md
+  // Regel 2) - unabhängig vom Kartenaufbau, da FilterSheet auch ohne
+  // geladene Karte anzeigbar sein soll.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("observable_types")
+      .select("*")
+      .order("group_name")
+      .then(({ data }) => {
+        if (data) setObservableTypes(data);
+      });
+  }, []);
+
+  // Bei jeder Filteränderung sofort neu laden, nicht erst beim nächsten
+  // Kartenschwenk.
+  useEffect(() => {
+    filterRef.current = {
+      radiusUeberschreibungM,
+      nurAktiv,
+      nurFahrzeugeSichtbar,
+      ausgewaehlteTypIds,
+    };
+    if (kartenBereitRef.current) ladeOrteRef.current();
+  }, [radiusUeberschreibungM, nurAktiv, nurFahrzeugeSichtbar, ausgewaehlteTypIds]);
+
+  function radiusWaehlen(meter: number) {
+    setRadiusUeberschreibungM((aktuell) => (aktuell === meter ? null : meter));
+  }
+
+  function typToggle(id: string) {
+    setAusgewaehlteTypIds((aktuell) =>
+      aktuell.includes(id) ? aktuell.filter((t) => t !== id) : [...aktuell, id],
+    );
+  }
+
+  const typFilterLabel =
+    ausgewaehlteTypIds.length === 0
+      ? null
+      : ausgewaehlteTypIds.length === 1
+        ? (observableTypes.find((t) => t.id === ausgewaehlteTypIds[0])?.name_de ??
+          null)
+        : `${ausgewaehlteTypIds.length} Fahrzeugtypen`;
 
   function standortVerwenden() {
     setZeigeStandortHinweis(false);
@@ -350,6 +445,27 @@ export function MapView() {
           <LocationHint
             onUseLocation={standortVerwenden}
             onDismiss={() => setZeigeStandortHinweis(false)}
+          />
+        )}
+        <FilterPillRow
+          radiusLabel={formatiereRadius(radiusAnzeigeM)}
+          nurAktiv={nurAktiv}
+          onNurAktivToggle={() => setNurAktiv((v) => !v)}
+          onFilterOeffnen={() => setFilterOffen(true)}
+          typFilterLabel={typFilterLabel}
+        />
+        {filterOffen && (
+          <FilterSheet
+            radiusUeberschreibungM={radiusUeberschreibungM}
+            onRadiusWaehlen={radiusWaehlen}
+            nurAktiv={nurAktiv}
+            onNurAktivToggle={() => setNurAktiv((v) => !v)}
+            nurFahrzeugeSichtbar={nurFahrzeugeSichtbar}
+            onNurFahrzeugeSichtbarToggle={() => setNurFahrzeugeSichtbar((v) => !v)}
+            typen={observableTypes}
+            ausgewaehlteTypIds={ausgewaehlteTypIds}
+            onTypToggle={typToggle}
+            onSchliessen={() => setFilterOffen(false)}
           />
         )}
         <PlacePreviewSheet

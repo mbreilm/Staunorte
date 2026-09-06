@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatDistance } from "@/lib/geo/distance";
 import { buildRouteUrl } from "@/lib/geo/routeLink";
 import { AktivitaetsBadge } from "@/components/place/AktivitaetsBadge";
+import { IconFotoPlatzhalter } from "@/lib/icons";
 
 const FOTO_BUCKET = "place-photos";
 
@@ -117,17 +118,7 @@ export function PlacePreviewSheet({ ort, beobachtungsLabel, onClose }: Props) {
                   className="flex h-full w-full items-center justify-center"
                   style={{ color: "var(--color-neutral-400)" }}
                 >
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                    <circle cx="9" cy="10" r="1.5" fill="currentColor" />
-                    <path
-                      d="M3 16l5-4 4 3 5-5 4 4"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <IconFotoPlatzhalter size={28} aria-hidden="true" />
                 </div>
               )}
             </div>

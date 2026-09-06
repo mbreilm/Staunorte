@@ -9,6 +9,7 @@ import { formatDistance } from "@/lib/geo/distance";
 import { leseExif } from "@/lib/geo/exif";
 import { ladeFotoHoch } from "@/lib/erfassen/fotoUpload";
 import { StandortAuswahl } from "@/components/erfassen/StandortAuswahl";
+import { GruppenIcon } from "@/components/icons/GruppenIcon";
 import { trackEvent } from "@/lib/analytics/plausible";
 
 type Props = {
@@ -261,7 +262,7 @@ export function CheckinFlow({
               {gemeldetSortiert.map((typ) => (
                 <Chip
                   key={typ.observable_type_id}
-                  icon={typ.icon}
+                  groupName={typ.group_name}
                   name={typ.name_de}
                   aktiv={ausgewaehlt.includes(typ.observable_type_id)}
                   onClick={() =>
@@ -289,7 +290,7 @@ export function CheckinFlow({
                 {gefundeneWeitere.map((typ) => (
                   <Chip
                     key={typ.id}
-                    icon={typ.icon}
+                    groupName={typ.group_name}
                     name={typ.name_de}
                     aktiv={ausgewaehlt.includes(typ.id)}
                     onClick={() =>
@@ -360,10 +361,16 @@ export function CheckinFlow({
             {neueFreischaltungen.map((typ, i) => (
               <span
                 key={typ.id}
-                style={{ background: "var(--color-bg)", animationDelay: `${i * 150}ms` }}
-                className="elev-lg flex h-28 w-28 flex-none animate-[stPop_500ms_cubic-bezier(.3,1.4,.5,1)_backwards] items-center justify-center rounded-full text-5xl"
+                style={{
+                  background: "var(--color-bg)",
+                  // Der Kreis steht auf der Akzentfläche - das Icon erbt
+                  // sonst deren helle Schriftfarbe und verschwindet.
+                  color: "var(--color-accent-800)",
+                  animationDelay: `${i * 150}ms`,
+                }}
+                className="elev-lg flex h-28 w-28 flex-none animate-[stPop_500ms_cubic-bezier(.3,1.4,.5,1)_backwards] items-center justify-center rounded-full"
               >
-                {typ.icon}
+                <GruppenIcon groupName={typ.group_name} size={56} />
               </span>
             ))}
           </div>
@@ -463,12 +470,12 @@ export function CheckinFlow({
 }
 
 function Chip({
-  icon,
+  groupName,
   name,
   aktiv,
   onClick,
 }: {
-  icon: string | null;
+  groupName: string | null;
   name: string;
   aktiv: boolean;
   onClick: () => void;
@@ -487,10 +494,10 @@ function Chip({
     >
       <span
         aria-hidden="true"
-        className="flex h-9 w-9 items-center justify-center rounded-full text-lg"
+        className="flex h-9 w-9 items-center justify-center rounded-full"
         style={{ background: aktiv ? "var(--color-accent-200)" : "var(--color-neutral-200)" }}
       >
-        {icon}
+        <GruppenIcon groupName={groupName} size={22} />
       </span>
       <b className="text-[14.5px]">{name}</b>
     </button>

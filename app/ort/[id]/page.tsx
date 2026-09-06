@@ -6,6 +6,7 @@ import { vorZeit, istAelterAlsTage } from "@/lib/format/relativeTime";
 import { AKTIVITAETS_TEXT_DETAIL } from "@/lib/format/activity";
 import { AktivitaetsBadge } from "@/components/place/AktivitaetsBadge";
 import { ZurueckPfeil } from "@/components/icons/ZurueckPfeil";
+import { GruppenIcon } from "@/components/icons/GruppenIcon";
 import { CheckinButton } from "@/components/checkin/CheckinButton";
 import { FotoGalerie } from "@/components/place/FotoGalerie";
 import { RouteButton } from "@/components/place/RouteButton";
@@ -255,11 +256,11 @@ function BeobachtungsZeile({
       style={{ background: stil.background, border: stil.border }}
     >
       <span
-        className="flex h-11 w-11 flex-none items-center justify-center rounded-full text-xl"
+        className="flex h-11 w-11 flex-none items-center justify-center rounded-full"
         aria-hidden="true"
         style={{ background: stil.iconBg }}
       >
-        {beobachtung.icon}
+        <GruppenIcon groupName={beobachtung.group_name} size={24} />
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">
         <strong className="text-[15px]" style={{ color: variante === "kuerzlich" ? "var(--color-neutral-800)" : undefined }}>
@@ -283,7 +284,7 @@ function ArchivChip({ beobachtung }: { beobachtung: PlaceObservableView }) {
       className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm"
       style={{ border: "1.5px dashed var(--color-neutral-400)", color: "var(--color-neutral-700)" }}
     >
-      <span aria-hidden="true">{beobachtung.icon}</span>
+      <GruppenIcon groupName={beobachtung.group_name} size={18} aria-hidden="true" />
       {beobachtung.name_de}
     </span>
   );

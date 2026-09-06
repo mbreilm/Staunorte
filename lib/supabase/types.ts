@@ -565,6 +565,8 @@ export type Database = {
           p_radius_m?: number;
           p_limit?: number;
           p_category?: string;
+          p_only_active?: boolean;
+          p_observable_type_ids?: string[] | null;
         };
         Returns: {
           id: string;
