@@ -1,16 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ObservableType, ObservableRarity } from "@/lib/supabase/types";
+import type { ObservableType } from "@/lib/supabase/types";
 import { trackEvent } from "@/lib/analytics/plausible";
 import { GruppenIcon } from "@/components/icons/GruppenIcon";
 import { fahrzeugBildUrl } from "@/lib/fahrzeugbild";
-
-const SELTENHEIT_TEXT: Record<ObservableRarity, string> = {
-  haeufig: "Häufig",
-  selten: "Selten",
-  legendaer: "Legendär",
-};
+import { SELTENHEIT_TEXT } from "@/lib/format/rarity";
 
 type Freischaltung = {
   observable_type_id: string;

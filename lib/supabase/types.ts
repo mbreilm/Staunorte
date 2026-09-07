@@ -507,6 +507,9 @@ export type Database = {
           distinct_reporters: number;
           confidence: number;
           bucket: ConfidenceBucket;
+          image_path: string | null;
+          image_credit: string | null;
+          kid_description: string | null;
         };
         Relationships: [];
       };
