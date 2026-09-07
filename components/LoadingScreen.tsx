@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-const ANZEIGE_DAUER_MS = 1600; // Eintritt (0.8s) + ein Schweb-Zyklus (0.8s)
-const FADE_DAUER_MS = 300;
+const ANZEIGE_DAUER_MS = 1200; // Eintritt (0.8s) + kurzer Schweb-Moment (0.4s)
+const FADE_DAUER_MS = 250;
 
 /**
  * Kurzer Splash beim (Neu-)Laden der App - reines CSS/SVG, kein WebGL.
