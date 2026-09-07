@@ -126,15 +126,7 @@ export function FahrzeugListe({ jetztHier, kuerzlich, archiv, observableLabel }:
                 <GruppenIcon groupName={ausgewaehlt.group_name} size={64} />
               </span>
             )}
-            {/* Anders als im Sammelalbum führt hier name_de, nicht
-                kid_name: die restliche Detailseite (Zeile, Filter,
-                Check-in) zeigt überall name_de - der Dialog soll den
-                Namen bestätigen, den man gerade angetippt hat, nicht
-                einen anderen zeigen. */}
             <h2 className="mt-3 text-lg">{ausgewaehlt.name_de}</h2>
-            {ausgewaehlt.kid_name && (
-              <p className="text-sm text-muted">{ausgewaehlt.kid_name}</p>
-            )}
             {ausgewaehlt.kid_description && (
               <p className="mt-3 text-sm">{ausgewaehlt.kid_description}</p>
             )}

@@ -152,7 +152,7 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                       className="text-center text-[11.5px] leading-tight"
                       style={{ color: "var(--color-neutral-700)" }}
                     >
-                      {typ.kid_name ?? typ.name_de}
+                      {typ.name_de}
                     </span>
                   </button>
                 );
@@ -202,8 +202,7 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                 <GruppenIcon groupName={ausgewaehlt.group_name} size={64} />
               </span>
             )}
-            <h2 className="mt-3 text-lg">{ausgewaehlt.kid_name ?? ausgewaehlt.name_de}</h2>
-            <p className="text-sm text-muted">{ausgewaehlt.name_de}</p>
+            <h2 className="mt-3 text-lg">{ausgewaehlt.name_de}</h2>
             {ausgewaehlt.kid_description && (
               <p className="mt-3 text-sm">{ausgewaehlt.kid_description}</p>
             )}

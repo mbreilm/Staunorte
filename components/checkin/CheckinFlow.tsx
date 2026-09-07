@@ -413,7 +413,7 @@ export function CheckinFlow({
 
           <h2 className="mt-5 text-3xl" style={{ color: "var(--color-bg)" }}>
             {neueFreischaltungen.length === 1
-              ? neueFreischaltungen[0].kid_name ?? neueFreischaltungen[0].name_de
+              ? neueFreischaltungen[0].name_de
               : `${neueFreischaltungen.length} neue Fahrzeuge entdeckt!`}
           </h2>
           {neueFreischaltungen.length === 1 && neueFreischaltungen[0].kid_description && (
