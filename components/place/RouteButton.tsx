@@ -9,7 +9,7 @@ export function RouteButton({ lat, lon }: { lat: number; lon: number }) {
       href={buildRouteUrl(lat, lon)}
       target="_blank"
       rel="noopener noreferrer"
-      className="btn btn-secondary h-14 flex-none px-5 text-base"
+      className="btn btn-secondary h-[54px] flex-none px-5 text-base"
     >
       Route
     </a>

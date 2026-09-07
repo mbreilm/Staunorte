@@ -28,7 +28,7 @@ export function CheckinButton({
       <button
         type="button"
         onClick={() => setOffen(true)}
-        className="btn btn-primary btn-block h-12 text-base"
+        className="btn btn-primary btn-block h-[54px] text-base"
       >
         Ich bin hier 👋
       </button>
