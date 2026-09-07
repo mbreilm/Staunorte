@@ -447,7 +447,10 @@ export function CheckinFlow({
 
           <button
             type="button"
-            onClick={() => router.push("/album")}
+            // Springt im Album direkt zur neu gefundenen Kachel (AlbumGrid
+            // liest "#typ-<id>"), statt nur oben in der Liste zu landen -
+            // bei mehreren neuen Fahrzeugen zur ersten davon.
+            onClick={() => router.push(`/album#typ-${neueFreischaltungen[0].id}`)}
             className="btn btn-block mx-auto mt-7 h-14 max-w-xs text-base"
             style={{ background: "var(--color-bg)", color: "var(--color-accent-800)" }}
           >

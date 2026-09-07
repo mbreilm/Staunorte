@@ -27,11 +27,30 @@ type Props = {
 
 export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
   const [ausgewaehlt, setAusgewaehlt] = useState<ObservableType | null>(null);
+  const [hervorgehobenId, setHervorgehobenId] = useState<string | null>(null);
 
   const bildUrl = (typ: ObservableType) => fahrzeugBildUrl(typ.image_path);
 
   useEffect(() => {
     trackEvent("Album geöffnet");
+  }, []);
+
+  // Sprung von der Freischalt-Feier (CheckinFlow): "#typ-<id>" zeigt genau
+  // auf die gerade neu gefundene Kachel, statt nur oben im Album zu landen.
+  // Kann erst nach dem Mount bekannt sein (window.location existiert beim
+  // Server-Render nicht) - ein lazy useState-Initializer würde hier einen
+  // Hydration-Mismatch auslösen, ein Effekt ist die richtige Stelle dafür.
+  useEffect(() => {
+    const id = window.location.hash.match(/^#typ-(.+)$/)?.[1];
+    if (!id) return;
+    const ziel = document.getElementById(`typ-${id}`);
+    if (!ziel) return;
+
+    ziel.scrollIntoView({ behavior: "smooth", block: "center" });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hervorgehobenId lässt sich erst nach dem Mount aus window.location.hash bestimmen, s.o.
+    setHervorgehobenId(id);
+    const timer = setTimeout(() => setHervorgehobenId(null), 2200);
+    return () => clearTimeout(timer);
   }, []);
 
   const freischaltungNachTyp = new Map(
@@ -82,9 +101,11 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
             <div className="grid grid-cols-3 gap-[10px]">
               {gruppenTypen.map((typ) => {
                 const freigeschaltet = angemeldet && freischaltungNachTyp.has(typ.id);
+                const hervorgehoben = typ.id === hervorgehobenId;
                 return (
                   <button
                     key={typ.id}
+                    id={`typ-${typ.id}`}
                     type="button"
                     disabled={!freigeschaltet}
                     onClick={() => setAusgewaehlt(typ)}
@@ -93,11 +114,12 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                     {/* Mit Foto: gesperrt wird entsättigt und abgedunkelt.
                         Ohne Foto bleibt das Gruppen-Icon, dort geht das nur
                         über die Farbe - ein Strich-Icon hat nichts zu
-                        entsättigen. */}
+                        entsättigen. hervorgehoben markiert kurz die Kachel,
+                        zu der von der Freischalt-Feier aus gesprungen wurde. */}
                     <span
-                      className={`flex aspect-square w-full items-center justify-center overflow-hidden rounded-[22px] ${freigeschaltet ? "elev-sm" : ""}`}
-                      style={
-                        freigeschaltet
+                      className={`flex aspect-square w-full items-center justify-center overflow-hidden rounded-[22px] transition-shadow duration-500 ${freigeschaltet ? "elev-sm" : ""}`}
+                      style={{
+                        ...(freigeschaltet
                           ? {
                               background: "var(--color-surface)",
                               color: "var(--color-accent-800)",
@@ -106,8 +128,11 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                               background: "var(--color-neutral-200)",
                               border: "1.5px dashed var(--color-neutral-400)",
                               color: "var(--color-neutral-500)",
-                            }
-                      }
+                            }),
+                        ...(hervorgehoben
+                          ? { boxShadow: "0 0 0 4px var(--color-accent-2-400)" }
+                          : {}),
+                      }}
                     >
                       {bildUrl(typ) ? (
                         // eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration
