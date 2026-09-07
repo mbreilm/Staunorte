@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/components/AuthProvider";
 import { Onboarding } from "@/components/Onboarding";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { MapView } from "@/components/map/MapView";
@@ -63,6 +64,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
           <BottomNav />
           <Onboarding />
+          {/* Höchster z-index im Rahmen (z-[100]) - soll bei jedem frischen
+              Laden kurz alles andere (Karte, Onboarding) verdecken. */}
+          <LoadingScreen />
           <AnalyticsProvider />
         </div>
       </body>
