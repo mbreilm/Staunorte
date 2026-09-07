@@ -28,7 +28,11 @@ export function CheckinButton({
       <button
         type="button"
         onClick={() => setOffen(true)}
-        className="btn btn-primary btn-block h-[54px] text-base"
+        // Kein .btn-block: dessen margin-top ist für frei stehende, volle
+        // Breite gedacht und würde den Button hier gegenüber dem
+        // RouteButton daneben nach unten verschieben (beide stehen in
+        // derselben Zeile, mt-5 am äußeren Wrapper reicht als Abstand).
+        className="btn btn-primary w-full h-[54px] text-base"
       >
         Ich bin hier 👋
       </button>
