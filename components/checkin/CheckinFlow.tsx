@@ -205,11 +205,14 @@ export function CheckinFlow({
     onClose();
   }
 
-  const gefundeneWeitere = weitereTypen.filter(
+  // Ohne Suchbegriff die komplette Liste zum Durchstöbern (falls der Name
+  // nicht einfällt), mit Suchbegriff nur noch die Treffer.
+  const sucheAktiv = suchbegriff.trim().length > 0;
+  const weitereAuswahl = weitereTypen.filter(
     (typ) =>
       !gemeldeteIds.has(typ.id) &&
-      suchbegriff.trim().length > 0 &&
-      typ.name_de.toLowerCase().includes(suchbegriff.trim().toLowerCase()),
+      (!sucheAktiv ||
+        typ.name_de.toLowerCase().includes(suchbegriff.trim().toLowerCase())),
   );
 
   const zeigtFeier = schritt === "erfolg" && neueFreischaltungen.length > 0;
@@ -320,9 +323,9 @@ export function CheckinFlow({
               placeholder="Weitere hinzufügen …"
               className="input"
             />
-            {gefundeneWeitere.length > 0 && (
+            {weitereAuswahl.length > 0 ? (
               <div className={zeigeErklaerungen ? "mt-2 flex flex-col gap-2" : "mt-2 flex flex-wrap gap-2"}>
-                {gefundeneWeitere.map((typ) => (
+                {weitereAuswahl.map((typ) => (
                   <Chip
                     key={typ.id}
                     groupName={typ.group_name}
@@ -339,6 +342,12 @@ export function CheckinFlow({
                   />
                 ))}
               </div>
+            ) : (
+              sucheAktiv && (
+                <p className="mt-2 text-[13.5px] text-muted">
+                  Kein Fahrzeug mit diesem Namen gefunden.
+                </p>
+              )
             )}
           </div>
 
