@@ -648,6 +648,60 @@ export type Database = {
       admin_foto_loeschen: { Args: { p_photo_id: string }; Returns: undefined };
       admin_meldung_erledigt: { Args: { p_report_id: string }; Returns: undefined };
       admin_nutzer_sperren: { Args: { p_user_id: string }; Returns: undefined };
+
+      // Erweiterte Verwaltung (0014) - ebenfalls nur für Admins.
+      admin_orte_liste: {
+        Args: { p_suche?: string | null };
+        Returns: {
+          id: string;
+          title: string;
+          category_id: string;
+          status: PlaceStatus;
+          source: PlaceSource;
+          is_confirmed: boolean;
+          is_hidden: boolean;
+          checkin_count: number;
+          created_at: string;
+          ersteller_id: string | null;
+          ersteller_email: string | null;
+        }[];
+      };
+      admin_ort_beendet: { Args: { p_place_id: string }; Returns: undefined };
+      admin_ort_titel_aendern: {
+        Args: { p_place_id: string; p_titel: string };
+        Returns: undefined;
+      };
+      admin_nutzer_liste: {
+        Args: { p_suche?: string | null };
+        Returns: {
+          id: string;
+          email: string | null;
+          display_name: string | null;
+          is_admin: boolean;
+          is_blocked: boolean;
+          created_at: string;
+          anzahl_orte: number;
+          anzahl_checkins: number;
+        }[];
+      };
+      admin_nutzer_entsperren: { Args: { p_user_id: string }; Returns: undefined };
+      // Wirft zusätzlich 'KANN_EIGENEN_ADMIN_STATUS_NICHT_AENDERN'.
+      admin_nutzer_admin_setzen: {
+        Args: { p_user_id: string; p_admin: boolean };
+        Returns: undefined;
+      };
+      admin_statistik: {
+        Args: Record<string, never>;
+        Returns: {
+          orte_gesamt: number;
+          orte_diese_woche: number;
+          checkins_gesamt: number;
+          checkins_diese_woche: number;
+          nutzer_gesamt: number;
+          nutzer_diese_woche: number;
+          offene_meldungen: number;
+        }[];
+      };
     };
   };
 };

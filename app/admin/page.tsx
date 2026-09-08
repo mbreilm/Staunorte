@@ -1,28 +1,18 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/admin/requireAdmin";
+import { NichtAdmin } from "@/components/admin/NichtAdmin";
+import { AdminNav } from "@/components/admin/AdminNav";
 import { MeldungenListe } from "@/components/admin/MeldungenListe";
 
 export default async function AdminSeite() {
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
-
-  const { data: profil } = user
-    ? await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle()
-    : { data: null };
-
-  if (!profil?.is_admin) {
-    return (
-      <main className="flex flex-1 items-center justify-center p-6 text-center">
-        <p className="text-sm text-muted">Diese Seite ist nur für Admins.</p>
-      </main>
-    );
-  }
+  const { supabase, istAdmin } = await getAdminContext();
+  if (!istAdmin) return <NichtAdmin />;
 
   const { data: meldungen } = await supabase.rpc("admin_meldungen_offen");
 
   return (
     <main className="flex-1 p-6">
-      <h1 className="text-lg">Offene Meldungen</h1>
+      <AdminNav />
+      <h1 className="mt-4 text-lg">Offene Meldungen</h1>
       <MeldungenListe meldungen={meldungen ?? []} />
     </main>
   );
