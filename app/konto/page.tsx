@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { AuthForm } from "@/components/AuthForm";
+import { createClient } from "@/lib/supabase/client";
 
 function RechtlichesLinks() {
   return (
@@ -26,6 +27,23 @@ function KontoContent() {
   const { user, isLoading, signOut } = useAuth();
   const searchParams = useSearchParams();
   const hatFehler = searchParams.get("error") === "anmeldung_fehlgeschlagen";
+  const [istAdmin, setIstAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    let abgebrochen = false;
+    createClient()
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!abgebrochen) setIstAdmin(data?.is_admin === true);
+      });
+    return () => {
+      abgebrochen = true;
+    };
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -43,6 +61,11 @@ function KontoContent() {
           <p className="text-sm text-muted">Angemeldet als</p>
           <p className="mt-1 font-medium">{user.email}</p>
         </div>
+        {istAdmin && (
+          <Link href="/admin" className="btn btn-secondary h-12 text-base">
+            Admin-Bereich öffnen
+          </Link>
+        )}
         <button type="button" onClick={() => signOut()} className="btn btn-secondary h-12 text-base">
           Abmelden
         </button>
