@@ -94,6 +94,13 @@ docs/PRD.md             Product Requirements Document
   `0006_...sql`), niemals bestehende Migrationen ändern.
 - **Nach jeder Änderung prüfen, ob die App noch startet** (`npm run dev`) und
   bei Datenbankänderungen die Tests in `supabase/tests/` erneut ausführen.
+- **Erst auf localhost testen, dann erst auf Vercel pushen.** Neue Features
+  und Fixes immer zuerst lokal (`npm run dev`, im Zweifel auch im Browser
+  durchklicken) prüfen. Erst wenn das läuft, `git push` — das löst bei diesem
+  Projekt automatisch ein Vercel-Deployment aus (GitHub-Verbindung). Ein
+  `git commit` ohne `git push` bleibt bewusst lokal und deployt nichts; erst
+  der Push bringt Änderungen live. Committen ist also ungefährlich, Pushen ist
+  der Schritt, der Produktion beeinflusst.
 - **Deutsche UI-Texte**, englische Variablen- und Funktionsnamen.
 - Der Auftraggeber programmiert nicht selbst. Fehler also nicht nur melden,
   sondern erklären, was sie bedeuten, und einen Vorschlag machen.
