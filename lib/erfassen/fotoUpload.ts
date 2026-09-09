@@ -11,7 +11,9 @@ const WEBP_QUALITAET = 0.8;
 export type UploadFortschritt = "verkleinern" | "hochladen";
 export type UploadErgebnis = { ok: true } | { ok: false; fehler: string };
 
-async function verkleinernUndKodieren(datei: File): Promise<Blob> {
+// Exportiert, damit lib/admin/fotoUpload.ts (Admin-Fotoverwaltung) dieselbe
+// Verkleinerung/EXIF-Entfernung nutzen kann, statt sie zu duplizieren.
+export async function verkleinernUndKodieren(datei: File): Promise<Blob> {
   const bild = await createImageBitmap(datei, { imageOrientation: "from-image" });
   try {
     const skala = Math.min(1, MAX_KANTE_PX / Math.max(bild.width, bild.height));

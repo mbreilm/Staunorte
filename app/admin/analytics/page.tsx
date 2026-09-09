@@ -12,13 +12,32 @@ export default async function AdminAnalyticsPage() {
 
   const kacheln = statistik
     ? [
-        { label: "Orte gesamt", wert: statistik.orte_gesamt, neu: statistik.orte_diese_woche },
+        {
+          label: "Orte gesamt",
+          wert: statistik.orte_gesamt,
+          unterzeile: `+${statistik.orte_diese_woche} diese Woche`,
+        },
         {
           label: "Check-ins gesamt",
           wert: statistik.checkins_gesamt,
-          neu: statistik.checkins_diese_woche,
+          unterzeile: `+${statistik.checkins_diese_woche} diese Woche`,
         },
-        { label: "Nutzer gesamt", wert: statistik.nutzer_gesamt, neu: statistik.nutzer_diese_woche },
+        {
+          label: "Nutzer gesamt",
+          wert: statistik.nutzer_gesamt,
+          unterzeile: `+${statistik.nutzer_diese_woche} diese Woche`,
+        },
+        {
+          // Seitenaufrufe, nicht eindeutige Besucher - siehe page_views (0015).
+          label: "Seitenaufrufe heute",
+          wert: statistik.seitenaufrufe_heute,
+          unterzeile: "seit Mitternacht",
+        },
+        {
+          label: "Fotos gesamt",
+          wert: statistik.fotos_gesamt,
+          unterzeile: "von Nutzern & Admins",
+        },
       ]
     : [];
 
@@ -42,7 +61,7 @@ export default async function AdminAnalyticsPage() {
                 <p className="text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
                   {k.wert}
                 </p>
-                <p className="card-meta">+{k.neu} diese Woche</p>
+                <p className="card-meta">{k.unterzeile}</p>
               </div>
             ))}
           </div>

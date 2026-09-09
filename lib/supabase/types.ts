@@ -485,6 +485,15 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["holidays"]["Insert"]>;
         Relationships: [];
       };
+
+      // Ein Seitenaufruf = eine Zeile. Bewusst ohne jede Spalte, die sich
+      // einer Person zuordnen ließe (0015).
+      page_views: {
+        Row: { id: number; created_at: string };
+        Insert: { id?: number; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["page_views"]["Insert"]>;
+        Relationships: [];
+      };
     };
 
     Views: {
@@ -700,7 +709,26 @@ export type Database = {
           nutzer_gesamt: number;
           nutzer_diese_woche: number;
           offene_meldungen: number;
+          seitenaufrufe_heute: number;
+          fotos_gesamt: number;
         }[];
+      };
+
+      // Fotoverwaltung (0015) - ebenfalls nur für Admins.
+      admin_ort_fotos: {
+        Args: { p_place_id: string };
+        Returns: {
+          id: string;
+          storage_path: string;
+          moderation_status: PhotoModerationStatus;
+          created_at: string;
+          uploaded_by: string | null;
+          uploaded_by_email: string | null;
+        }[];
+      };
+      admin_foto_hinzufuegen: {
+        Args: { p_place_id: string; p_storage_path: string };
+        Returns: string; // uuid des neuen Fotos
       };
     };
   };

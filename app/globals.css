@@ -202,6 +202,9 @@
   .tag-accent-2 { background: var(--color-accent-2-100); color: var(--color-accent-2-800); }
   .tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
   .tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent); }
+  /* Kompaktere Variante für dichte Listen (Admin-Bereich: viele Karten
+     gleichzeitig, Übersicht geht vor Lesbarkeit aus der Ferne). */
+  .tag-sm { font-size: 9.5px; padding: 1px 7px; }
 
   /* — dialog / bottom sheet — */
   .dialog-backdrop {

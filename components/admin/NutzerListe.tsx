@@ -100,8 +100,8 @@ export function NutzerListe({ initial, eigeneId }: { initial: Nutzer[]; eigeneId
               <p className="card-title">{n.display_name || n.email || n.id}</p>
               <p className="card-meta flex-wrap">
                 {n.email && <span>{n.email}</span>}
-                {n.is_admin && <span className="tag tag-accent">Admin</span>}
-                {n.is_blocked && <span className="tag tag-outline">Gesperrt</span>}
+                {n.is_admin && <span className="tag tag-sm tag-accent">Admin</span>}
+                {n.is_blocked && <span className="tag tag-sm tag-outline">Gesperrt</span>}
                 <span>{n.anzahl_orte} Orte</span>
                 <span>{n.anzahl_checkins} Check-ins</span>
                 <span>seit {new Date(n.created_at).toLocaleDateString("de-DE")}</span>
