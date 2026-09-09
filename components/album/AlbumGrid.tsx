@@ -102,7 +102,6 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                     key={typ.id}
                     id={`typ-${typ.id}`}
                     type="button"
-                    disabled={!freigeschaltet}
                     onClick={() => setAusgewaehlt(typ)}
                     className="flex flex-col items-center gap-1.5"
                   >
@@ -162,7 +161,7 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
         ))}
       </div>
 
-      {ausgewaehlt && ausgewaehlteFreischaltung && (
+      {ausgewaehlt && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <button
             type="button"
@@ -191,13 +190,21 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
                   src={bildUrl(ausgewaehlt)!}
                   alt={`Foto: ${ausgewaehlt.name_de}`}
                   decoding="async"
-                  className="h-48 w-full object-cover"
+                  className={
+                    ausgewaehlteFreischaltung
+                      ? "h-48 w-full object-cover"
+                      : "h-48 w-full object-cover opacity-60 grayscale"
+                  }
                 />
               </span>
             ) : (
               <span
                 className="inline-flex items-center justify-center"
-                style={{ color: "var(--color-accent-800)" }}
+                style={{
+                  color: ausgewaehlteFreischaltung
+                    ? "var(--color-accent-800)"
+                    : "var(--color-neutral-500)",
+                }}
               >
                 <GruppenIcon groupName={ausgewaehlt.group_name} size={64} />
               </span>
@@ -209,12 +216,16 @@ export function AlbumGrid({ typen, freischaltungen, angemeldet }: Props) {
             <p className="tag tag-accent mt-3 inline-flex">
               {SELTENHEIT_TEXT[ausgewaehlt.rarity]}
             </p>
-            <p className="mt-3 text-xs text-muted">
-              Zuerst gesehen am{" "}
-              {new Date(ausgewaehlteFreischaltung.unlocked_at).toLocaleDateString("de-DE")}
-              {ausgewaehlteFreischaltung.places &&
-                ` an ${ausgewaehlteFreischaltung.places.title}`}
-            </p>
+            {ausgewaehlteFreischaltung ? (
+              <p className="mt-3 text-xs text-muted">
+                Zuerst gesehen am{" "}
+                {new Date(ausgewaehlteFreischaltung.unlocked_at).toLocaleDateString("de-DE")}
+                {ausgewaehlteFreischaltung.places &&
+                  ` an ${ausgewaehlteFreischaltung.places.title}`}
+              </p>
+            ) : (
+              <p className="mt-3 text-xs text-muted">Noch nicht entdeckt.</p>
+            )}
             {/* Pflichtangabe: die Fotos stehen unter CC-BY/CC-BY-SA, das
                 verlangt die Nennung von Urheber und Lizenz am Bild. */}
             {ausgewaehlt.image_credit && (
