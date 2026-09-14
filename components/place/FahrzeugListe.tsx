@@ -5,6 +5,7 @@ import type { PlaceObservableView } from "@/lib/supabase/types";
 import { vorZeit } from "@/lib/format/relativeTime";
 import { GruppenIcon } from "@/components/icons/GruppenIcon";
 import { FahrzeugDetailSheet } from "@/components/fahrzeug/FahrzeugDetailSheet";
+import { fahrzeugBildUrl } from "@/lib/fahrzeugbild";
 
 const BUCKET_STIL = {
   jetzt: {
@@ -31,9 +32,11 @@ type Props = {
 };
 
 /**
- * Fahrzeugliste der Detailseite. Gruppen-Icons sehen für mehrere
- * Ausprägungen derselben Gruppe gleich aus (z.B. alle Bagger-Typen) -
- * Antippen öffnet deshalb denselben Foto-Dialog wie im Sammelalbum.
+ * Fahrzeugliste der Detailseite. Jede Zeile zeigt das Katalogfoto; das
+ * Gruppen-Icon bleibt nur als Rückfall für Typen ohne hinterlegtes Bild.
+ * Grund: Gruppen-Icons sehen für mehrere Ausprägungen derselben Gruppe
+ * gleich aus (z.B. alle Bagger-Typen). Antippen öffnet weiterhin den
+ * Steckbrief.
  */
 export function FahrzeugListe({ jetztHier, kuerzlich, archiv, observableLabel }: Props) {
   const [ausgewaehlt, setAusgewaehlt] = useState<PlaceObservableView | null>(null);
@@ -111,6 +114,7 @@ function BeobachtungsZeile({
   onTap: () => void;
 }) {
   const stil = BUCKET_STIL[variante];
+  const bildUrl = fahrzeugBildUrl(beobachtung.image_path);
   return (
     <li>
       <button
@@ -119,12 +123,25 @@ function BeobachtungsZeile({
         className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left"
         style={{ background: stil.background, border: stil.border }}
       >
+        {/* Der farbige Ring trägt weiterhin den Zustand (frisch/älter) -
+            das Foto füllt nur die Fläche, die vorher das Icon hatte. */}
         <span
-          className="flex h-11 w-11 flex-none items-center justify-center rounded-full"
+          className="flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full"
           aria-hidden="true"
-          style={{ background: stil.iconBg }}
+          style={{ background: stil.iconBg, border: `2px solid ${stil.iconBg}` }}
         >
-          <GruppenIcon groupName={beobachtung.group_name} size={24} />
+          {bildUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration
+            <img
+              src={bildUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <GruppenIcon groupName={beobachtung.group_name} size={24} />
+          )}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
           <strong
@@ -153,14 +170,28 @@ function ArchivChip({
   beobachtung: PlaceObservableView;
   onTap: () => void;
 }) {
+  const bildUrl = fahrzeugBildUrl(beobachtung.image_path);
   return (
     <button
       type="button"
       onClick={onTap}
-      className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm"
+      className="inline-flex h-9 items-center gap-1.5 rounded-full py-1 pl-1 pr-3 text-sm"
       style={{ border: "1.5px dashed var(--color-neutral-400)", color: "var(--color-neutral-700)" }}
     >
-      <GruppenIcon groupName={beobachtung.group_name} size={18} aria-hidden="true" />
+      {bildUrl ? (
+        // Entsättigt wie im Sammelalbum: Diese Fahrzeuge sind Vergangenheit,
+        // das soll man auf einen Blick sehen.
+        // eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration
+        <img
+          src={bildUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-6 w-6 flex-none rounded-full object-cover opacity-70 grayscale"
+        />
+      ) : (
+        <GruppenIcon groupName={beobachtung.group_name} size={18} aria-hidden="true" />
+      )}
       {beobachtung.name_de}
     </button>
   );
