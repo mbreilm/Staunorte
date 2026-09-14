@@ -233,6 +233,22 @@ export function CheckinFlow({
         typ.name_de.toLowerCase().includes(suchbegriff.trim().toLowerCase())),
   );
 
+  // Nach Gerätegruppen gegliedert (Bagger, Kräne, ...), damit man in der
+  // langen Liste schneller beim passenden Gerät ist. Die Gruppen kommen aus
+  // der Datenbank (group_name), nicht aus einer Liste im Code (CLAUDE.md
+  // Regel 2); innerhalb der Gruppe bleibt die Katalog-Reihenfolge erhalten.
+  // Bei aktiver Suche wird dieselbe gefilterte Liste gruppiert - Gruppen
+  // ohne Treffer fallen dadurch von selbst weg.
+  const gruppierteAuswahl = (() => {
+    const gruppen = new Map<string, ObservableType[]>();
+    for (const typ of weitereAuswahl) {
+      const gruppe = typ.group_name ?? "";
+      if (!gruppen.has(gruppe)) gruppen.set(gruppe, []);
+      gruppen.get(gruppe)!.push(typ);
+    }
+    return [...gruppen.entries()];
+  })();
+
   const zeigtFeier = schritt === "erfolg" && neueFreischaltungen.length > 0;
 
   return (
@@ -344,24 +360,31 @@ export function CheckinFlow({
               className="input"
             />
             {weitereAuswahl.length > 0 ? (
-              <div className={zeigeErklaerungen ? "mt-2 flex flex-col gap-2" : "mt-2 flex flex-wrap gap-2"}>
-                {weitereAuswahl.map((typ) => (
-                  <Chip
-                    key={typ.id}
-                    groupName={typ.group_name}
-                    name={typ.name_de}
-                    imagePath={typ.image_path}
-                    onInfo={() => setDetail(typ)}
-                    beschreibung={erklaerungFuer(typ.id)}
-                    aktiv={ausgewaehlt.includes(typ.id)}
-                    onClick={() =>
-                      setAusgewaehlt((vorher) =>
-                        vorher.includes(typ.id)
-                          ? vorher.filter((x) => x !== typ.id)
-                          : [...vorher, typ.id],
-                      )
-                    }
-                  />
+              <div className="mt-3 flex flex-col gap-4">
+                {gruppierteAuswahl.map(([gruppe, gruppenTypen]) => (
+                  <div key={gruppe}>
+                    {gruppe && <h6 className="mb-2">{gruppe}</h6>}
+                    <div className={zeigeErklaerungen ? "flex flex-col gap-2" : "flex flex-wrap gap-2"}>
+                      {gruppenTypen.map((typ) => (
+                        <Chip
+                          key={typ.id}
+                          groupName={typ.group_name}
+                          name={typ.name_de}
+                          imagePath={typ.image_path}
+                          onInfo={() => setDetail(typ)}
+                          beschreibung={erklaerungFuer(typ.id)}
+                          aktiv={ausgewaehlt.includes(typ.id)}
+                          onClick={() =>
+                            setAusgewaehlt((vorher) =>
+                              vorher.includes(typ.id)
+                                ? vorher.filter((x) => x !== typ.id)
+                                : [...vorher, typ.id],
+                            )
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
