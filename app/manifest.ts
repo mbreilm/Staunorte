@@ -8,7 +8,10 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Baustellenjäger",
-    short_name: "Baustellen",
+    // Auch der Kurzname (Text unter dem Icon auf dem Homescreen) ist der
+    // volle Name - manche Systeme kürzen ihn dort optisch ab, ein anderer
+    // Name soll dort aber nicht stehen.
+    short_name: "Baustellenjäger",
     description:
       "Finde die spannendsten Baustellen in der Nähe und schau dir an, welche Fahrzeuge dort gerade arbeiten.",
     lang: "de",
