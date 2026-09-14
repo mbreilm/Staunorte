@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Map as MapLibreMap,
+  Marker,
   type GeoJSONSource,
   type MapLayerMouseEvent,
 } from "maplibre-gl";
@@ -13,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { ObservableType, PlaceNearby } from "@/lib/supabase/types";
 import { haversineMeters } from "@/lib/geo/distance";
 import { richteMaplibreWorkerEin } from "@/lib/maplibre/setup";
+import { IconStandort } from "@/lib/icons";
 import { registerMarkerIcons, markerIconKey } from "./markerIcons";
 import { LocationHint } from "./LocationHint";
 import { PlacePreviewSheet } from "./PlacePreviewSheet";
@@ -28,6 +30,11 @@ const NOTFALL_AKZENTFARBE = "#c67139";
 // Notfall-Fallback für observable_label - bewusst neutral, keine
 // Kategoriesprache (CLAUDE.md Regel 2), nur falls die Abfrage fehlschlägt.
 const NOTFALL_BEOBACHTUNGSLABEL = "Beobachtungen";
+
+// Bewusst kühl und damit außerhalb der warmen Erdton-Palette: Der eigene
+// Standort darf nie mit einem Ort verwechselt werden, und Blau ist für
+// "hier bin ich" auf Karten die weltweit gelernte Farbe.
+const EIGENER_STANDORT_FARBE = "#2d6ea3";
 
 const ENTPRELLUNG_MS = 300;
 const MIN_RADIUS_M = 300;
@@ -119,6 +126,15 @@ export function MapView() {
   });
   const ladeOrteRef = useRef<() => void>(() => {});
   const kartenBereitRef = useRef(false);
+
+  // Eigener Standort: Marker + laufende Verfolgung. `verfolgungGewuenscht`
+  // merkt sich, dass die Person den Standort freigegeben hat - die
+  // Verfolgung selbst pausiert, solange die Karte nicht der aktive Tab ist
+  // (watchPosition im Hintergrund kostet unnötig Akku).
+  const standortMarkerRef = useRef<Marker | null>(null);
+  const letzterStandortRef = useRef<{ lat: number; lon: number } | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const verfolgungGewuenschtRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -335,10 +351,35 @@ export function MapView() {
 
     return () => {
       if (entprellungRef.current) clearTimeout(entprellungRef.current);
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+      standortMarkerRef.current = null;
       map.remove();
       mapRef.current = null;
     };
   }, []);
+
+  // Standortverfolgung pausiert, solange die Karte nicht der aktive Tab ist:
+  // Die Karte bleibt dauerhaft gemountet (siehe oben), watchPosition würde
+  // sonst auch im Album und im Konto weiterlaufen und Akku ziehen.
+  useEffect(() => {
+    if (!verfolgungGewuenschtRef.current) return;
+
+    if (aktiverTab && watchIdRef.current === null) {
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (position) =>
+          standortMarkerSetzen(position.coords.latitude, position.coords.longitude),
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 10_000 },
+      );
+    }
+    if (!aktiverTab && watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+  }, [aktiverTab]);
 
   // Fahrzeugtyp-Katalog für den Filter (Gruppen kommen aus der DB, CLAUDE.md
   // Regel 2) - unabhängig vom Kartenaufbau, da FilterSheet auch ohne
@@ -384,13 +425,56 @@ export function MapView() {
           null)
         : `${ausgewaehlteTypIds.length} Fahrzeugtypen`;
 
+  // Setzt bzw. verschiebt den Punkt "hier bin ich". Der Marker wird einmal
+  // gebaut und danach nur noch umgesetzt, damit beim Gehen kein neues
+  // DOM-Element pro Positionsmeldung entsteht.
+  function standortMarkerSetzen(lat: number, lon: number) {
+    const map = mapRef.current;
+    if (!map) return;
+    letzterStandortRef.current = { lat, lon };
+
+    if (!standortMarkerRef.current) {
+      const punkt = document.createElement("div");
+      punkt.setAttribute("aria-hidden", "true");
+      punkt.style.width = "18px";
+      punkt.style.height = "18px";
+      punkt.style.borderRadius = "50%";
+      punkt.style.background = EIGENER_STANDORT_FARBE;
+      punkt.style.border = "3px solid #ffffff";
+      punkt.style.boxShadow = "0 0 0 1px rgba(0,0,0,.18), 0 2px 6px rgba(0,0,0,.3)";
+      standortMarkerRef.current = new Marker({ element: punkt })
+        .setLngLat([lon, lat])
+        .addTo(map);
+    } else {
+      standortMarkerRef.current.setLngLat([lon, lat]);
+    }
+  }
+
+  function standortVerfolgen() {
+    verfolgungGewuenschtRef.current = true;
+    if (watchIdRef.current !== null) return; // läuft schon
+    if (!("geolocation" in navigator)) return;
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) =>
+        standortMarkerSetzen(position.coords.latitude, position.coords.longitude),
+      () => {
+        // Ablehnung oder Fehler: kein Punkt, keine Meldung - die Karte
+        // bleibt ohne eigenen Standort nutzbar (keine Sackgasse).
+      },
+      { enableHighAccuracy: true, maximumAge: 10_000 },
+    );
+  }
+
   function standortVerwenden() {
     setZeigeStandortHinweis(false);
 
     if (!("geolocation" in navigator)) return; // alter Browser: stiller Fallback
 
+    standortVerfolgen();
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        standortMarkerSetzen(position.coords.latitude, position.coords.longitude);
         mapRef.current?.flyTo({
           center: [position.coords.longitude, position.coords.latitude],
           zoom: 14,
@@ -402,6 +486,20 @@ export function MapView() {
       },
       { enableHighAccuracy: false, timeout: 8000 },
     );
+  }
+
+  // "Auf meinen Standort zentrieren": Ist die Position schon bekannt, geht
+  // es sofort dorthin; sonst wird sie jetzt geholt (und dabei gleich die
+  // laufende Verfolgung gestartet).
+  function aufStandortZentrieren() {
+    setZeigeStandortHinweis(false);
+    const bekannt = letzterStandortRef.current;
+    if (bekannt) {
+      mapRef.current?.flyTo({ center: [bekannt.lon, bekannt.lat], zoom: 15 });
+      standortVerfolgen();
+      return;
+    }
+    standortVerwenden();
   }
 
   // Zwei getrennte Wrapper statt einem: `position: fixed` erzeugt in
@@ -473,6 +571,19 @@ export function MapView() {
           beobachtungsLabel={beobachtungsLabel}
           onClose={() => setAusgewaehlterOrt(null)}
         />
+        <button
+          type="button"
+          onClick={aufStandortZentrieren}
+          aria-label="Auf meinen Standort zentrieren"
+          className="btn btn-icon elev-lg fixed z-30"
+          style={{
+            background: "var(--color-bg)",
+            right: "1rem",
+            bottom: "max(9.75rem, calc(env(safe-area-inset-bottom) + 8.75rem))",
+          }}
+        >
+          <IconStandort size={22} />
+        </button>
         <Link
           href="/neu"
           aria-label="Ort erfassen"

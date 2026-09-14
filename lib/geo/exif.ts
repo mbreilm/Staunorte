@@ -15,7 +15,11 @@ export type ExifDaten = {
 
 export async function leseExif(datei: File): Promise<ExifDaten> {
   try {
-    const daten = await parse(datei, { gps: true, pick: ["DateTimeOriginal"] });
+    // Kein `pick` mehr: Ein globales `pick: ["DateTimeOriginal"]` filtert
+    // auch die GPS-Felder weg - exifr lieferte dann gar nichts zurück, aus
+    // Fotos kam also nie ein Standort an. Die beiden Blöcke werden jetzt
+    // direkt angefordert; das Ergebnis enthält Koordinaten und Datum.
+    const daten = await parse(datei, { gps: true, exif: true });
     const hatKoordinaten =
       typeof daten?.latitude === "number" && typeof daten?.longitude === "number";
     const datum: Date | undefined = daten?.DateTimeOriginal;

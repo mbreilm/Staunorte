@@ -4,8 +4,7 @@ import { useState } from "react";
 import type { PlaceObservableView } from "@/lib/supabase/types";
 import { vorZeit } from "@/lib/format/relativeTime";
 import { GruppenIcon } from "@/components/icons/GruppenIcon";
-import { fahrzeugBildUrl } from "@/lib/fahrzeugbild";
-import { SELTENHEIT_TEXT } from "@/lib/format/rarity";
+import { FahrzeugDetailSheet } from "@/components/fahrzeug/FahrzeugDetailSheet";
 
 const BUCKET_STIL = {
   jetzt: {
@@ -40,8 +39,6 @@ export function FahrzeugListe({ jetztHier, kuerzlich, archiv, observableLabel }:
   const [ausgewaehlt, setAusgewaehlt] = useState<PlaceObservableView | null>(null);
 
   if (jetztHier.length === 0 && kuerzlich.length === 0 && archiv.length === 0) return null;
-
-  const bildUrl = (b: PlaceObservableView) => fahrzeugBildUrl(b.image_path);
 
   return (
     <section className="mt-6">
@@ -87,64 +84,16 @@ export function FahrzeugListe({ jetztHier, kuerzlich, archiv, observableLabel }:
       )}
 
       {ausgewaehlt && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-          <button
-            type="button"
-            aria-label="Schließen"
-            onClick={() => setAusgewaehlt(null)}
-            className="absolute inset-0 bg-black/40"
-          />
-          <div className="dialog elev-lg relative z-10 w-full max-w-md rounded-b-none p-6 pb-8 text-center">
-            <button
-              type="button"
-              aria-label="Schließen"
-              onClick={() => setAusgewaehlt(null)}
-              className="btn btn-icon absolute right-3 top-3"
-            >
-              ×
-            </button>
-            <div
-              aria-hidden="true"
-              className="mx-auto mb-4 h-1.5 w-12 rounded-full"
-              style={{ background: "var(--color-neutral-400)" }}
-            />
-            {bildUrl(ausgewaehlt) ? (
-              <span className="block overflow-hidden rounded-2xl">
-                {/* eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration */}
-                <img
-                  src={bildUrl(ausgewaehlt)!}
-                  alt={`Foto: ${ausgewaehlt.name_de}`}
-                  decoding="async"
-                  className="h-48 w-full object-cover"
-                />
-              </span>
-            ) : (
-              <span
-                className="inline-flex items-center justify-center"
-                style={{ color: "var(--color-accent-800)" }}
-              >
-                <GruppenIcon groupName={ausgewaehlt.group_name} size={64} />
-              </span>
-            )}
-            <h2 className="mt-3 text-lg">{ausgewaehlt.name_de}</h2>
-            {ausgewaehlt.kid_description && (
-              <p className="mt-3 text-sm">{ausgewaehlt.kid_description}</p>
-            )}
-            <p className="tag tag-accent mt-3 inline-flex">
-              {SELTENHEIT_TEXT[ausgewaehlt.rarity]}
-            </p>
-            <p className="mt-3 text-xs text-muted">
-              Zuletzt hier gesehen {vorZeit(ausgewaehlt.last_seen_at)}
-            </p>
-            {/* Pflichtangabe: die Fotos stehen unter CC-BY/CC-BY-SA, das
-                verlangt die Nennung von Urheber und Lizenz am Bild. */}
-            {ausgewaehlt.image_credit && (
-              <p className="mt-2 text-[10.5px] leading-snug" style={{ color: "var(--color-neutral-500)" }}>
-                {ausgewaehlt.image_credit}
-              </p>
-            )}
-          </div>
-        </div>
+        <FahrzeugDetailSheet
+          name={ausgewaehlt.name_de}
+          groupName={ausgewaehlt.group_name}
+          imagePath={ausgewaehlt.image_path}
+          imageCredit={ausgewaehlt.image_credit}
+          kidDescription={ausgewaehlt.kid_description}
+          rarity={ausgewaehlt.rarity}
+          fussnote={`Zuletzt hier gesehen ${vorZeit(ausgewaehlt.last_seen_at)}`}
+          onClose={() => setAusgewaehlt(null)}
+        />
       )}
     </section>
   );

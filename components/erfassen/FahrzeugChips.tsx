@@ -1,7 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import type { ObservableType } from "@/lib/supabase/types";
 import { GruppenIcon } from "@/components/icons/GruppenIcon";
+import { FahrzeugDetailSheet } from "@/components/fahrzeug/FahrzeugDetailSheet";
+import { fahrzeugBildUrl } from "@/lib/fahrzeugbild";
+import { IconErklaerung } from "@/lib/icons";
 
 type Props = {
   typen: ObservableType[];
@@ -13,8 +17,15 @@ type Props = {
  * Chip-Auswahl der Fahrzeugtypen, gruppiert nach group_name - die Gruppen
  * kommen aus der Datenbank, keine hartkodierten Kategorien (CLAUDE.md
  * Regel 2).
+ *
+ * Jeder Chip zeigt das Katalogfoto (Gruppen-Icon nur als Rückfall, solange
+ * kein Foto hinterlegt ist) und daneben ein Info-Symbol, das den Steckbrief
+ * öffnet: Gruppen-Icons allein reichen nicht, um z. B. Straßenfertiger und
+ * Straßenfräse auseinanderzuhalten.
  */
 export function FahrzeugChips({ typen, ausgewaehlt, onToggle }: Props) {
+  const [detail, setDetail] = useState<ObservableType | null>(null);
+
   const gruppen = new Map<string, ObservableType[]>();
   for (const typ of typen) {
     const gruppe = typ.group_name ?? "";
@@ -30,33 +41,73 @@ export function FahrzeugChips({ typen, ausgewaehlt, onToggle }: Props) {
           <div className="flex flex-wrap gap-2">
             {gruppenTypen.map((typ) => {
               const aktiv = ausgewaehlt.includes(typ.id);
+              const bildUrl = fahrzeugBildUrl(typ.image_path);
               return (
-                <button
+                // Auswahl und Info sind zwei getrennte Schaltflächen - ein
+                // Button im Button wäre ungültiges HTML. Die Pillenoptik
+                // trägt deshalb der Rahmen drumherum.
+                <div
                   key={typ.id}
-                  type="button"
-                  onClick={() => onToggle(typ.id)}
-                  aria-pressed={aktiv}
-                  className="btn min-h-11 gap-2 pl-1.5 pr-3.5"
+                  className="flex items-center rounded-full"
                   style={
                     aktiv
                       ? { background: "var(--color-accent-100)", color: "var(--color-accent-800)", border: "2px solid var(--color-accent-300)" }
                       : { border: "2px solid var(--color-divider)" }
                   }
                 >
-                  <span
-                    aria-hidden="true"
-                    className="flex h-8 w-8 items-center justify-center rounded-full"
-                    style={{ background: aktiv ? "var(--color-accent-200)" : "var(--color-neutral-200)" }}
+                  <button
+                    type="button"
+                    onClick={() => onToggle(typ.id)}
+                    aria-pressed={aktiv}
+                    className="flex min-h-11 items-center gap-2 rounded-full py-1 pl-1.5 pr-2"
                   >
-                    <GruppenIcon groupName={typ.group_name} size={20} />
-                  </span>
-                  <b className="text-[13.5px]">{typ.name_de}</b>
-                </button>
+                    <span
+                      aria-hidden="true"
+                      className="flex h-8 w-8 flex-none items-center justify-center overflow-hidden rounded-full"
+                      style={{ background: aktiv ? "var(--color-accent-200)" : "var(--color-neutral-200)" }}
+                    >
+                      {bildUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration
+                        <img
+                          src={bildUrl}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <GruppenIcon groupName={typ.group_name} size={20} />
+                      )}
+                    </span>
+                    <b className="text-[13.5px]">{typ.name_de}</b>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetail(typ)}
+                    aria-label={`Mehr über ${typ.name_de}`}
+                    className="flex min-h-11 items-center rounded-full pl-1 pr-3"
+                    style={{ color: "var(--color-neutral-600)" }}
+                  >
+                    <IconErklaerung size={17} />
+                  </button>
+                </div>
               );
             })}
           </div>
         </div>
       ))}
+
+      {detail && (
+        <FahrzeugDetailSheet
+          name={detail.name_de}
+          groupName={detail.group_name}
+          imagePath={detail.image_path}
+          imageCredit={detail.image_credit}
+          kidDescription={detail.kid_description}
+          rarity={detail.rarity}
+          onClose={() => setDetail(null)}
+        />
+      )}
     </div>
   );
 }

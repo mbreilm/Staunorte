@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import type { ObservableType, PlaceNearby } from "@/lib/supabase/types";
 import { leseExif } from "@/lib/geo/exif";
+import { holeEigenePosition, type EigenePosition } from "@/lib/geo/position";
 import {
   ladeEntwurf,
   speichereEntwurf,
@@ -50,6 +51,10 @@ export default function OrtErfassen() {
   const supabase = useMemo(() => createClient(), []);
   const fotoInputRef = useRef<HTMLInputElement>(null);
   const fotosRef = useRef<File[]>([]);
+  // Echte Geräteposition, im Hintergrund geholt, sobald Fotos gewählt sind.
+  // Wird für den automatischen Check-in am Ende gebraucht - NICHT für den
+  // Ort selbst, der darf auch aus der Ferne per Foto-GPS gesetzt werden.
+  const eigenePositionRef = useRef<EigenePosition | null>(null);
 
   const [schritt, setSchritt] = useState<Schritt>("foto");
   const [entwurf, setEntwurf] = useState<OrtEntwurf>(ladeEntwurf);
@@ -60,6 +65,7 @@ export default function OrtErfassen() {
   const [attributSchema, setAttributSchema] = useState<AttributSchema>({});
   const [kategorieName, setKategorieName] = useState("");
   const [beobachtungsLabel, setBeobachtungsLabel] = useState("");
+  const [standortQuelle, setStandortQuelle] = useState<"foto" | "geraet" | null>(null);
   const [ladeStandort, setLadeStandort] = useState(false);
   const [speichertGerade, setSpeichertGerade] = useState(false);
   const [fotoFortschritt, setFotoFortschritt] = useState<MehrfachUploadFortschritt | null>(
@@ -166,6 +172,15 @@ export default function OrtErfassen() {
     fotosRef.current = dateien;
     setLadeStandort(true);
 
+    // Eigene Position einmal im Hintergrund anstoßen: Sie dient als Rückfall
+    // für den Pin (wenn das Foto kein GPS hat) UND später als ehrliche
+    // Position für den automatischen Check-in. Bewusst nicht abgewartet -
+    // hat das Foto Koordinaten, geht es ohne Verzögerung weiter.
+    const positionsPromise = holeEigenePosition();
+    positionsPromise.then((position) => {
+      eigenePositionRef.current = position;
+    });
+
     // Nur das erste Foto liefert den Standort-Vorschlag - jedes Foto
     // bekommt sein eigenes EXIF erst beim Upload (ladeFotosHoch), hier
     // reicht ein einzelner Lesevorgang für den Standort-Schritt.
@@ -178,33 +193,23 @@ export default function OrtErfassen() {
       return;
     }
 
+    // Foto-GPS hat Vorrang vor der Geräteposition: Genau das erlaubt es,
+    // eine Baustelle später von zu Hause aus einzutragen.
     if (lat !== null && lon !== null) {
       setLadeStandort(false);
+      setStandortQuelle("foto");
       setSchritt("standort");
       entwurfAktualisieren({ lat, lon });
       return;
     }
 
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLadeStandort(false);
-          setSchritt("standort");
-          entwurfAktualisieren({
-            lat: pos.coords.latitude,
-            lon: pos.coords.longitude,
-          });
-        },
-        () => {
-          setLadeStandort(false);
-          setSchritt("standort");
-        },
-        { enableHighAccuracy: true, timeout: 8000 },
-      );
-    } else {
-      setLadeStandort(false);
-      setSchritt("standort");
+    const eigene = await positionsPromise;
+    setLadeStandort(false);
+    if (eigene) {
+      setStandortQuelle("geraet");
+      entwurfAktualisieren({ lat: eigene.lat, lon: eigene.lon });
     }
+    setSchritt("standort");
   }
 
   async function speichern() {
@@ -241,16 +246,24 @@ export default function OrtErfassen() {
     }
 
     // Direkt eingecheckt (PRD 6.2) - mit denselben Fahrzeugauswahlen, ohne
-    // zusätzliche Rückfrage. Schlägt das aus irgendeinem Grund fehl,
-    // blockiert das nicht die Navigation zum neuen Ort.
+    // zusätzliche Rückfrage. Entscheidend ist die ECHTE Geräteposition:
+    // Früher standen hier die Koordinaten des Orts selbst, wodurch die
+    // 200-m-Prüfung in do_checkin() immer ins Leere lief. Wer eine
+    // Baustelle aus der Ferne per Foto-GPS einträgt, legt sie damit an,
+    // checkt aber nicht ein - der Ort bleibt "unbestätigt", bis wirklich
+    // jemand davorsteht. Ein Fehlschlag blockiert nie den angelegten Ort.
     if (neueId) {
-      const { error: checkinFehler } = await supabase.rpc("do_checkin", {
-        p_place_id: neueId,
-        p_lat: entwurf.lat,
-        p_lon: entwurf.lon,
-        p_observable_ids: entwurf.ausgewaehlteFahrzeuge,
-      });
-      if (!checkinFehler) trackEvent("Check-in abgeschlossen");
+      const eigene = eigenePositionRef.current;
+      if (eigene) {
+        const { error: checkinFehler } = await supabase.rpc("do_checkin", {
+          p_place_id: neueId,
+          p_lat: eigene.lat,
+          p_lon: eigene.lon,
+          p_accuracy_m: eigene.accuracy ?? undefined,
+          p_observable_ids: entwurf.ausgewaehlteFahrzeuge,
+        });
+        if (!checkinFehler) trackEvent("Check-in abgeschlossen");
+      }
     }
 
     // Arbeitszeiten (T10) - erst jetzt möglich, der Ort existiert vorher nicht.
@@ -325,6 +338,11 @@ export default function OrtErfassen() {
           lat: entwurf.lat ?? STANDARD_LAT,
           lon: entwurf.lon ?? STANDARD_LON,
         }}
+        hinweis={
+          standortQuelle === "foto"
+            ? "Standort aus dem Foto übernommen - du musst nicht vor Ort sein."
+            : null
+        }
         onBestaetigt={nachStandortBestaetigt}
         onAbbrechen={abbrechen}
       />

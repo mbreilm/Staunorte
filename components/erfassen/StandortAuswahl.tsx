@@ -11,6 +11,8 @@ type Props = {
   onBestaetigt: (position: { lat: number; lon: number }) => void;
   /** Zeigt einen Zurück-Button oben links, falls gesetzt (z. B. Erfassen-Flow abbrechen). */
   onAbbrechen?: () => void;
+  /** Zusatzzeile über der Bestätigen-Frage, z. B. woher der Pin stammt. */
+  hinweis?: string | null;
 };
 
 /**
@@ -20,7 +22,7 @@ type Props = {
  * den Button explizit bestätigt werden - nie automatisch übernommen
  * (CLAUDE.md/PRD 6.2).
  */
-export function StandortAuswahl({ start, onBestaetigt, onAbbrechen }: Props) {
+export function StandortAuswahl({ start, onBestaetigt, onAbbrechen, hinweis }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef(start);
 
@@ -81,6 +83,14 @@ export function StandortAuswahl({ start, onBestaetigt, onAbbrechen }: Props) {
         className="bg-[var(--color-bg)] p-4"
         style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
       >
+        {hinweis && (
+          <p
+            className="mb-1 text-center text-[13px]"
+            style={{ color: "var(--color-accent-700)" }}
+          >
+            {hinweis}
+          </p>
+        )}
         <p className="mb-2 text-center text-sm text-muted">
           Stimmt der Pin? Zum Verschieben ziehen oder auf die Karte tippen.
         </p>

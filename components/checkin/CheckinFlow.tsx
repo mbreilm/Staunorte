@@ -4,7 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
-import type { ObservableType, PlaceObservableView } from "@/lib/supabase/types";
+import type {
+  ObservableRarity,
+  ObservableType,
+  PlaceObservableView,
+} from "@/lib/supabase/types";
 import { formatDistance } from "@/lib/geo/distance";
 import {
   ladeFotosHoch,
@@ -12,6 +16,8 @@ import {
 } from "@/lib/erfassen/fotoUpload";
 import { StandortAuswahl } from "@/components/erfassen/StandortAuswahl";
 import { GruppenIcon } from "@/components/icons/GruppenIcon";
+import { FahrzeugDetailSheet } from "@/components/fahrzeug/FahrzeugDetailSheet";
+import { fahrzeugBildUrl } from "@/lib/fahrzeugbild";
 import { IconErklaerung } from "@/lib/icons";
 import { trackEvent } from "@/lib/analytics/plausible";
 
@@ -31,6 +37,17 @@ type Schritt =
   | "pin-korrigieren"
   | "erfolg"
   | "foto-angebot";
+
+/** Beide Chip-Quellen (Katalog und v_place_observables) tragen dieselben
+ *  Feldnamen - der Steckbrief bekommt sie darum über denselben Helfer. */
+type FahrzeugDetail = {
+  name_de: string;
+  group_name: string | null;
+  image_path: string | null;
+  image_credit: string | null;
+  kid_description: string | null;
+  rarity: ObservableRarity;
+};
 
 const FEHLER_TEXT: Record<string, string> = {
   GPS_UNGENAU:
@@ -61,6 +78,7 @@ export function CheckinFlow({
   const [suchbegriff, setSuchbegriff] = useState("");
   const [zeigeErklaerungen, setZeigeErklaerungen] = useState(false);
   const [ausgewaehlt, setAusgewaehlt] = useState<string[]>([]);
+  const [detail, setDetail] = useState<FahrzeugDetail | null>(null);
   const [neueFreischaltungen, setNeueFreischaltungen] = useState<ObservableType[]>([]);
   const [albumFortschritt, setAlbumFortschritt] = useState<number | null>(null);
   const [fotoStatus, setFotoStatus] = useState<
@@ -301,6 +319,8 @@ export function CheckinFlow({
                   key={typ.observable_type_id}
                   groupName={typ.group_name}
                   name={typ.name_de}
+                  imagePath={typ.image_path}
+                  onInfo={() => setDetail(typ)}
                   beschreibung={erklaerungFuer(typ.observable_type_id)}
                   aktiv={ausgewaehlt.includes(typ.observable_type_id)}
                   onClick={() =>
@@ -330,6 +350,8 @@ export function CheckinFlow({
                     key={typ.id}
                     groupName={typ.group_name}
                     name={typ.name_de}
+                    imagePath={typ.image_path}
+                    onInfo={() => setDetail(typ)}
                     beschreibung={erklaerungFuer(typ.id)}
                     aktiv={ausgewaehlt.includes(typ.id)}
                     onClick={() =>
@@ -521,36 +543,54 @@ export function CheckinFlow({
           </button>
         </div>
       )}
+
+      {detail && (
+        <FahrzeugDetailSheet
+          name={detail.name_de}
+          groupName={detail.group_name}
+          imagePath={detail.image_path}
+          imageCredit={detail.image_credit}
+          kidDescription={detail.kid_description}
+          rarity={detail.rarity}
+          onClose={() => setDetail(null)}
+        />
+      )}
     </div>
   );
 }
 
 /**
  * Ohne `beschreibung` ein kompakter Chip zum schnellen Antippen, mit
- * `beschreibung` eine volle Zeile mit Erklärungstext darunter.
+ * `beschreibung` eine volle Zeile mit Erklärungstext darunter. Das
+ * Katalogfoto ersetzt das Gruppen-Icon, sobald eins hinterlegt ist; das
+ * Info-Symbol daneben öffnet den Steckbrief.
  */
 function Chip({
   groupName,
   name,
+  imagePath,
   beschreibung,
   aktiv,
   onClick,
+  onInfo,
 }: {
   groupName: string | null;
   name: string;
+  imagePath: string | null;
   beschreibung?: string | null;
   aktiv: boolean;
   onClick: () => void;
+  onInfo: () => void;
 }) {
+  const bildUrl = fahrzeugBildUrl(imagePath);
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={aktiv}
+    // Auswahl und Info sind zwei getrennte Schaltflächen - ein Button im
+    // Button wäre ungültiges HTML. Die Pillenoptik trägt der Rahmen.
+    <div
       className={
         beschreibung
-          ? "btn min-h-12 w-full justify-start gap-2.5 py-2.5 pl-1.5 pr-4 text-left"
-          : "btn min-h-12 gap-2.5 pl-1.5 pr-4"
+          ? "flex w-full items-center rounded-full"
+          : "flex items-center rounded-full"
       }
       style={
         aktiv
@@ -558,22 +598,53 @@ function Chip({
           : { border: "2px solid var(--color-divider)" }
       }
     >
-      <span
-        aria-hidden="true"
-        className="flex h-9 w-9 flex-none items-center justify-center rounded-full"
-        style={{ background: aktiv ? "var(--color-accent-200)" : "var(--color-neutral-200)" }}
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={aktiv}
+        className={
+          beschreibung
+            ? "btn min-h-12 min-w-0 flex-1 justify-start gap-2.5 border-0 py-2.5 pl-1.5 pr-2 text-left"
+            : "btn min-h-12 gap-2.5 border-0 pl-1.5 pr-2"
+        }
       >
-        <GruppenIcon groupName={groupName} size={22} />
-      </span>
-      {beschreibung ? (
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <b className="text-[14.5px]">{name}</b>
-          <span className="text-xs font-normal leading-snug text-muted">{beschreibung}</span>
+        <span
+          aria-hidden="true"
+          className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full"
+          style={{ background: aktiv ? "var(--color-accent-200)" : "var(--color-neutral-200)" }}
+        >
+          {bildUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Supabase-Storage-Fotos ohne next/image-Konfiguration
+            <img
+              src={bildUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <GruppenIcon groupName={groupName} size={22} />
+          )}
         </span>
-      ) : (
-        <b className="text-[14.5px]">{name}</b>
-      )}
-    </button>
+        {beschreibung ? (
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <b className="text-[14.5px]">{name}</b>
+            <span className="text-xs font-normal leading-snug text-muted">{beschreibung}</span>
+          </span>
+        ) : (
+          <b className="text-[14.5px]">{name}</b>
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={onInfo}
+        aria-label={`Mehr über ${name}`}
+        className="flex min-h-12 flex-none items-center rounded-full pl-1 pr-3.5"
+        style={{ color: "var(--color-neutral-600)" }}
+      >
+        <IconErklaerung size={18} />
+      </button>
+    </div>
   );
 }
 
