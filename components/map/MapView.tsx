@@ -94,6 +94,31 @@ async function berechtigungsStatus(): Promise<PermissionStatus | null> {
   }
 }
 
+/**
+ * Sind das brauchbare Koordinaten?
+ *
+ * MapLibre wirft bei ungültigen Werten `Invalid LngLat object: (NaN, NaN)`.
+ * Das Tückische daran: Ist die Kameraposition der Karte einmal auf NaN
+ * gesetzt, wirft danach JEDE weitere Berechnung darauf erneut - beim
+ * Zeichnen, beim Verschieben, beim Nachladen. Die Karte reagiert dann auf
+ * nichts mehr, während der Rest der App normal weiterläuft. Genau dieses
+ * Bild gab es auf dem iPhone.
+ *
+ * Deshalb wird jeder Wert geprüft, bevor er die Karte erreicht: `null`,
+ * `undefined`, Text und NaN fallen hier raus. Number.isFinite() deckt
+ * zusätzlich Infinity ab.
+ */
+function sindKoordinatenBrauchbar(lat: unknown, lon: unknown): boolean {
+  return (
+    typeof lat === "number" &&
+    typeof lon === "number" &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
+    Math.abs(lat) <= 90 &&
+    Math.abs(lon) <= 180
+  );
+}
+
 const ENTPRELLUNG_MS = 300;
 const MIN_RADIUS_M = 300;
 const MAX_RADIUS_M = 50_000;
@@ -118,7 +143,9 @@ function baueFeatureCollection(
 ): GeoJSON.FeatureCollection<GeoJSON.Point, OrtEigenschaften> {
   return {
     type: "FeatureCollection",
-    features: orte.map((ort) => {
+    features: orte
+      .filter((ort) => sindKoordinatenBrauchbar(ort.lat, ort.lon))
+      .map((ort) => {
       const farbig = ort.fresh_observables > 0;
       const gestrichelt = ort.source === "open_data" && !ort.is_confirmed;
       const aktiv = ort.activity === "aktiv";
@@ -531,6 +558,12 @@ export function MapView() {
   function standortMarkerSetzen(lat: number, lon: number) {
     const map = mapRef.current;
     if (!map) return;
+    // Manche Geräte melden unbrauchbare Werte, statt einen Fehler zu
+    // liefern. Eine solche Position darf die Karte nie erreichen.
+    if (!sindKoordinatenBrauchbar(lat, lon)) {
+      console.error("Unbrauchbare Position verworfen:", lat, lon);
+      return;
+    }
     letzterStandortRef.current = { lat, lon };
     // Eine Position bekommen wir nur mit Erlaubnis - das ist also der
     // verlässlichste Beleg dafür, dass zugestimmt wurde.
