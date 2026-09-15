@@ -20,8 +20,17 @@ const FOTO_ALTER_HINWEIS_TAGE = 90;
 
 export default async function OrtDetailSeite({
   params,
+  searchParams,
 }: PageProps<"/ort/[id]">) {
   const { id } = await params;
+  // ?von=admin: Die Detailseite wurde aus der Ortsverwaltung heraus
+  // geöffnet. Dann führt der Zurück-Pfeil dorthin zurück statt auf die
+  // Karte - sonst landet man als Admin nach jedem Blick auf einen Ort
+  // wieder am Anfang und muss sich durch die Liste zurückarbeiten.
+  const { von } = await searchParams;
+  const ausAdmin = von === "admin";
+  const zurueckHref = ausAdmin ? "/admin/orte" : "/";
+  const zurueckLabel = ausAdmin ? "Zurück zur Ortsverwaltung" : "Zurück zur Karte";
   const supabase = await createClient();
 
   const { data: ort } = await supabase
@@ -104,10 +113,18 @@ export default async function OrtDetailSeite({
   return (
     <main className="flex-1 pb-10">
       {galerieFotos.length > 0 ? (
-        <FotoGalerie fotos={galerieFotos} zurueckHref="/" />
+        <FotoGalerie
+          fotos={galerieFotos}
+          zurueckHref={zurueckHref}
+          zurueckLabel={zurueckLabel}
+        />
       ) : (
         <div className="flex items-center px-4 pt-4">
-          <Link href="/" aria-label="Zurück zur Karte" className="btn btn-icon elev-sm">
+          <Link
+            href={zurueckHref}
+            aria-label={zurueckLabel}
+            className="btn btn-icon elev-sm"
+          >
             <ZurueckPfeil />
           </Link>
         </div>

@@ -12,7 +12,15 @@ type Foto = { id: string; url: string; badgeText: string };
  * Fotos zeigt ein Punkt-Indikator die Position im horizontalen Streifen,
  * Antippen öffnet einen Vollbild-Betrachter zum Durchblättern.
  */
-export function FotoGalerie({ fotos, zurueckHref }: { fotos: Foto[]; zurueckHref: string }) {
+export function FotoGalerie({
+  fotos,
+  zurueckHref,
+  zurueckLabel = "Zurück zur Karte",
+}: {
+  fotos: Foto[];
+  zurueckHref: string;
+  zurueckLabel?: string;
+}) {
   const [meldeFotoId, setMeldeFotoId] = useState<string | null>(null);
   const [aktiverIndex, setAktiverIndex] = useState(0);
   const [vollbildOffen, setVollbildOffen] = useState(false);
@@ -44,7 +52,7 @@ export function FotoGalerie({ fotos, zurueckHref }: { fotos: Foto[]; zurueckHref
 
         <Link
           href={zurueckHref}
-          aria-label="Zurück zur Karte"
+          aria-label={zurueckLabel}
           className="btn btn-icon elev-sm absolute left-3 top-3"
           style={{ background: "var(--color-bg)" }}
         >

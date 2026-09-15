@@ -135,6 +135,12 @@ export function MapView() {
   const letzterStandortRef = useRef<{ lat: number; lon: number } | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const verfolgungGewuenschtRef = useRef(false);
+  // Gewünschte Zoomstufe, sobald die ERSTE Position hereinkommt - danach
+  // wieder null. Nötig, weil die erste Ortung je nach Gerät mehrere
+  // Sekunden dauert: Wir können nicht auf getCurrentPosition() allein
+  // bauen (dessen Timeout lief beim Kaltstart oft ab, bevor macOS eine
+  // Position lieferte - die Karte blieb dann auf München stehen).
+  const zentrierenZoomRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -338,16 +344,25 @@ export function MapView() {
         map.getCanvas().style.cursor = "";
       });
 
-      // Standortabfrage erst nach dem erklärenden Hinweis - nicht sofort
-      // beim Laden. Die Karte selbst ist zu diesem Zeitpunkt schon
-      // benutzbar (Zentrum München/Fallback).
-      setZeigeStandortHinweis(true);
-
       kartenBereitRef.current = true;
       ladeOrte();
     });
 
+    // Bewusst NICHT im "load"-Handler: der wartet auf den Kartenstil von
+    // einem fremden Server. Ist der gerade langsam, stünde die Ortung
+    // minutenlang still, obwohl Kamerabewegungen (flyTo) auch vor dem
+    // Stil schon funktionieren. Die Ortung läuft deshalb parallel.
+    standortHinweisOderDirekt();
+
     map.on("moveend", ladeOrteEntprellt);
+
+    // Schiebt oder zoomt jemand selbst, bevor die erste Ortung da ist, wird
+    // nicht mehr automatisch zentriert - ein Sprung mitten in die eigene
+    // Bewegung wäre ärgerlich. `originalEvent` unterscheidet dabei die
+    // Geste von unserem eigenen flyTo(). Der Zentrieren-Button bleibt.
+    map.on("movestart", (e) => {
+      if (e.originalEvent) zentrierenZoomRef.current = null;
+    });
 
     return () => {
       if (entprellungRef.current) clearTimeout(entprellungRef.current);
@@ -359,6 +374,7 @@ export function MapView() {
       map.remove();
       mapRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- die Karte wird bewusst nur einmal aufgebaut; standortHinweisOderDirekt arbeitet ausschließlich auf Refs und Settern
   }, []);
 
   // Standortverfolgung pausiert, solange die Karte nicht der aktive Tab ist:
@@ -448,6 +464,13 @@ export function MapView() {
     } else {
       standortMarkerRef.current.setLngLat([lon, lat]);
     }
+
+    // Erste Position nach einem "zentrieren"-Wunsch: jetzt hinfliegen.
+    const zielZoom = zentrierenZoomRef.current;
+    if (zielZoom !== null) {
+      zentrierenZoomRef.current = null;
+      map.flyTo({ center: [lon, lat], zoom: zielZoom });
+    }
   }
 
   function standortVerfolgen() {
@@ -466,23 +489,49 @@ export function MapView() {
     );
   }
 
-  function standortVerwenden() {
+  // Entscheidet beim Öffnen der Karte, ob der erklärende Hinweis nötig ist:
+  //  - "granted": Der Standort ist in diesem Browser schon freigegeben. Dann
+  //    noch einmal um Erlaubnis zu bitten wäre unnötig - die Karte fliegt
+  //    direkt zur eigenen Position.
+  //  - "denied": Ein Tap auf "Standort verwenden" würde gar keinen
+  //    Browser-Dialog mehr auslösen und liefe ins Leere (Sackgasse). Der
+  //    Hinweis bleibt deshalb weg; der Zentrieren-Button bleibt sichtbar.
+  //  - "prompt" / Permissions-API nicht verfügbar: wie bisher erst erklären,
+  //    dann fragen.
+  async function standortHinweisOderDirekt() {
+    let zustand: PermissionState | null = null;
+    try {
+      zustand =
+        (await navigator.permissions?.query({ name: "geolocation" }))?.state ?? null;
+    } catch {
+      // Ältere Browser kennen permissions.query für "geolocation" nicht.
+      zustand = null;
+    }
+
+    if (zustand === "granted") {
+      standortVerwenden();
+      return;
+    }
+    if (zustand === "denied") return;
+    setZeigeStandortHinweis(true);
+  }
+
+  function standortVerwenden(zoom = 14) {
     setZeigeStandortHinweis(false);
 
     if (!("geolocation" in navigator)) return; // alter Browser: stiller Fallback
 
+    // Zentriert wird, sobald die erste Position da ist - egal ob sie aus
+    // getCurrentPosition() oder aus der laufenden Verfolgung kommt.
+    zentrierenZoomRef.current = zoom;
     standortVerfolgen();
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        standortMarkerSetzen(position.coords.latitude, position.coords.longitude);
-        mapRef.current?.flyTo({
-          center: [position.coords.longitude, position.coords.latitude],
-          zoom: 14,
-        });
-      },
+      (position) =>
+        standortMarkerSetzen(position.coords.latitude, position.coords.longitude),
       () => {
         // Ablehnung oder Fehler (Timeout, kein GPS, ...): einfach beim
         // München-Fallback bleiben, keine Fehlermeldung, keine Sackgasse.
+        // Ein späterer Treffer der Verfolgung zentriert dann immer noch.
       },
       { enableHighAccuracy: false, timeout: 8000 },
     );
@@ -499,7 +548,7 @@ export function MapView() {
       standortVerfolgen();
       return;
     }
-    standortVerwenden();
+    standortVerwenden(15);
   }
 
   // Zwei getrennte Wrapper statt einem: `position: fixed` erzeugt in

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 import { ladeFotoAlsAdminHoch } from "@/lib/admin/fotoUpload";
@@ -214,7 +215,20 @@ export function OrteListe({ initial }: { initial: Ort[] }) {
                   />
                 </div>
               ) : (
-                <p className="card-title">{ort.title}</p>
+                // Titel als Link auf die normale Detailansicht. Bewusst nur
+                // der Titel und nicht die ganze Kachel: darin stecken die
+                // Verwaltungs-Buttons, ein umschließender Link würde deren
+                // Taps abfangen. `?von=admin` sorgt dafür, dass der
+                // Zurück-Pfeil dort wieder hierher führt.
+                <Link
+                  href={`/ort/${ort.id}?von=admin`}
+                  className="card-title flex items-center gap-1 hover:underline"
+                >
+                  {ort.title}
+                  <span aria-hidden="true" style={{ color: "var(--color-accent)" }}>
+                    ›
+                  </span>
+                </Link>
               )}
 
               <p className="card-meta flex-wrap">
