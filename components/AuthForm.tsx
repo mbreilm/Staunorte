@@ -1,7 +1,33 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import type { AuthError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+
+/**
+ * Übersetzt einen Anmeldefehler in einen Satz, der weiterhilft.
+ *
+ * Vorher stand hier für JEDEN Fall „Prüf die E-Mail-Adresse" - bei einem
+ * erreichten Versandlimit also ein Rat, der garantiert wieder scheitert,
+ * und ein Verdacht gegen eine Adresse, mit der alles stimmt. Wer die App
+ * benutzt, tippt dann drei Mal dieselbe Adresse neu und hält sie für kaputt.
+ *
+ * Grundregel: Nur dann nach der Adresse fragen, wenn Supabase tatsächlich
+ * sagt, dass mit ihr etwas nicht stimmt. Sonst offen sagen, dass es nicht
+ * an der Person liegt.
+ */
+function anmeldeFehlerText(error: AuthError): string {
+  // Zu viele Anfragen - entweder Supabases eigenes Stundenlimit oder das
+  // Tageskontingent des Versanddienstes (siehe supabase/templates/README.md).
+  if (error.status === 429 || error.code === "over_email_send_rate_limit") {
+    return "Gerade wurden zu viele Anmelde-Links angefordert. Probier es in ein paar Minuten noch einmal.";
+  }
+  // Nur hier ist die Adresse wirklich der Grund.
+  if (error.code === "validation_failed") {
+    return "Diese E-Mail-Adresse sieht nicht richtig aus. Magst du sie noch einmal prüfen?";
+  }
+  return "Der Link lässt sich gerade nicht verschicken. Das liegt nicht an dir — bitte versuch es später noch einmal.";
+}
 
 type Props = {
   /** Wohin nach erfolgreicher Anmeldung zurückgesprungen wird. */
@@ -59,10 +85,11 @@ export function AuthForm({ redirectPath = "/" }: Props) {
     });
 
     if (error) {
+      // Die eigentliche Ursache steht nur hier - im UI hätte sie niemandem
+      // geholfen, beim Nachsehen im Fehlerfall dagegen sehr.
+      console.error("Anmelde-Link fehlgeschlagen:", error.status, error.code, error.message);
       setStatus("error");
-      setErrorMessage(
-        "Der Link konnte nicht verschickt werden. Prüf die E-Mail-Adresse und versuch's noch mal.",
-      );
+      setErrorMessage(anmeldeFehlerText(error));
       return;
     }
     setStatus("sent");
@@ -79,6 +106,7 @@ export function AuthForm({ redirectPath = "/" }: Props) {
     });
 
     if (error) {
+      console.error("Google-Anmeldung fehlgeschlagen:", error.status, error.code, error.message);
       setGoogleLoading(false);
       setStatus("error");
       setErrorMessage(
