@@ -552,14 +552,25 @@ export function MapView() {
       standortMarkerRef.current.setLngLat([lon, lat]);
     }
 
-    // Erste Position nach einem "zentrieren"-Wunsch: jetzt hinfliegen.
-    // Bewusst ohne Warten auf das "load"-Ereignis der Karte: Kamerabefehle
-    // wirken auch vorher schon, und wenn der Kartenstil gerade hängt,
-    // stünde man sonst weiter über München statt über sich selbst.
+    // Erste Position nach einem "zentrieren"-Wunsch: jetzt dorthin.
+    //
+    // Geflogen wird nur, wenn der Kartenstil schon steht. Ein flyTo() ist
+    // eine Animation, und MapLibre sperrt währenddessen die Bedienung der
+    // Karte. Startet die Animation, bevor der Stil geladen ist, kann sie
+    // hängen bleiben - dann bleibt die Karte dauerhaft gesperrt und
+    // reagiert auf keine Berührung mehr. Am Schreibtisch fällt das nie
+    // auf, weil der Stil längst da ist; am Handy im Mobilfunknetz ist er
+    // es oft noch nicht.
+    //
+    // Vorher gibt es deshalb jumpTo(): setzt die Kamera sofort und ohne
+    // Animation. Nichts wird gesperrt, und sobald der Stil eintrifft,
+    // zeichnet MapLibre an der richtigen Stelle.
     const zielZoom = zentrierenZoomRef.current;
     if (zielZoom !== null) {
       zentrierenZoomRef.current = null;
-      map.flyTo({ center: [lon, lat], zoom: zielZoom });
+      const ziel = { center: [lon, lat] as [number, number], zoom: zielZoom };
+      if (map.loaded()) map.flyTo(ziel);
+      else map.jumpTo(ziel);
     }
   }
 
@@ -642,10 +653,14 @@ export function MapView() {
     setZeigeStandortHinweis(false);
     const bekannt = letzterStandortRef.current;
     if (bekannt) {
-      mapRef.current?.flyTo({
-        center: [bekannt.lon, bekannt.lat],
+      const karte = mapRef.current;
+      const ziel = {
+        center: [bekannt.lon, bekannt.lat] as [number, number],
         zoom: ZOOM_STANDORT_BUTTON,
-      });
+      };
+      // Gleiche Vorsicht wie oben: animiert nur bei geladenem Stil.
+      if (karte?.loaded()) karte.flyTo(ziel);
+      else karte?.jumpTo(ziel);
       standortVerfolgen();
       return;
     }
