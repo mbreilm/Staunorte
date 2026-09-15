@@ -36,6 +36,15 @@ const NOTFALL_BEOBACHTUNGSLABEL = "Beobachtungen";
 // "hier bin ich" auf Karten die weltweit gelernte Farbe.
 const EIGENER_STANDORT_FARBE = "#2d6ea3";
 
+// Zoomstufen rund um den eigenen Standort. Die Übersicht ist bewusst
+// weiter draußen als der Zentrieren-Button: Beim Öffnen der App will man
+// sehen, was in der Umgebung los ist (der Suchradius leitet sich aus dem
+// sichtbaren Ausschnitt ab, weiter draußen = mehr Baustellen). Tippt man
+// dagegen aktiv auf "Auf meinen Standort zentrieren", will man wissen, wo
+// genau man steht - dort darf es näher heran.
+const ZOOM_UEBERSICHT = 13;
+const ZOOM_STANDORT_BUTTON = 15;
+
 const ENTPRELLUNG_MS = 300;
 const MIN_RADIUS_M = 300;
 const MAX_RADIUS_M = 50_000;
@@ -466,6 +475,9 @@ export function MapView() {
     }
 
     // Erste Position nach einem "zentrieren"-Wunsch: jetzt hinfliegen.
+    // Bewusst ohne Warten auf das "load"-Ereignis der Karte: Kamerabefehle
+    // wirken auch vorher schon, und wenn der Kartenstil gerade hängt,
+    // stünde man sonst weiter über München statt über sich selbst.
     const zielZoom = zentrierenZoomRef.current;
     if (zielZoom !== null) {
       zentrierenZoomRef.current = null;
@@ -516,7 +528,7 @@ export function MapView() {
     setZeigeStandortHinweis(true);
   }
 
-  function standortVerwenden(zoom = 14) {
+  function standortVerwenden(zoom = ZOOM_UEBERSICHT) {
     setZeigeStandortHinweis(false);
 
     if (!("geolocation" in navigator)) return; // alter Browser: stiller Fallback
@@ -544,11 +556,14 @@ export function MapView() {
     setZeigeStandortHinweis(false);
     const bekannt = letzterStandortRef.current;
     if (bekannt) {
-      mapRef.current?.flyTo({ center: [bekannt.lon, bekannt.lat], zoom: 15 });
+      mapRef.current?.flyTo({
+        center: [bekannt.lon, bekannt.lat],
+        zoom: ZOOM_STANDORT_BUTTON,
+      });
       standortVerfolgen();
       return;
     }
-    standortVerwenden(15);
+    standortVerwenden(ZOOM_STANDORT_BUTTON);
   }
 
   // Zwei getrennte Wrapper statt einem: `position: fixed` erzeugt in
