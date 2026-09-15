@@ -21,6 +21,38 @@ sonst sieht die Mail je nach Person unterschiedlich aus:
 E-Mail-HTML kennt keine gemeinsamen Bausteine, die beiden Dateien sind
 deshalb fast identisch. Wer am Aussehen etwas ändert, muss es in beiden tun.
 
+## Voraussetzung: eigenes SMTP
+
+Seit Juni 2026 lassen sich die Vorlagen mit Supabases eingebautem Versand
+gar nicht mehr bearbeiten — und wichtiger noch: Der eingebaute Versand
+liefert ausschließlich an Adressen aus dem Projekt-Team aus. Ohne eigenes
+SMTP kann sich also niemand außer dem Team anmelden.
+
+Versendet wird deshalb über **Resend**, die Domain `baustellenjaeger.com`
+ist dort verifiziert (DKIM auf `resend._domainkey`, SPF und MX auf der
+Subdomain `send.`; die DNS-Einträge liegen bei IONOS). Der freie Tarif
+deckt 3.000 Mails im Monat bzw. 100 am Tag ab.
+
+Supabase-Dashboard → **Project Settings** → **Authentication** →
+**SMTP Settings**:
+
+| Feld | Wert |
+|---|---|
+| Host | `smtp.resend.com` |
+| Port | `587` |
+| Username | `resend` (wörtlich, kein Platzhalter) |
+| Password | der Resend-API-Key (`re_…`) |
+| Sender email | `hallo@baustellenjaeger.com` |
+| Sender name | `Baustellenjäger` |
+
+Das IONOS-Postfach bleibt davon unberührt: Resend verschickt nur, eingehende
+Post an `hallo@` landet weiter über die MX-Einträge bei IONOS. Deshalb als
+Absender bewusst eine Adresse, auf die man auch antworten kann.
+
+Direkt darunter steht **Rate Limits** → *Rate limit for sending emails*. Der
+Standardwert ist niedrig und stammt noch aus der Zeit des eingebauten
+Versands; mit eigenem SMTP kann er gefahrlos hochgesetzt werden.
+
 ## Einspielen
 
 Supabase-Dashboard → **Authentication** → **Emails** → **Templates**, dann
@@ -48,7 +80,7 @@ Supabase ersetzt beim Versand:
 
 ## Abhängigkeiten außerhalb dieser Dateien
 
-- **Das Logo** wird als Bild von `https://baustellenjaeger.vercel.app/icons/logo-mail.png`
+- **Das Logo** wird als Bild von `https://baustellenjaeger.com/icons/logo-mail.png`
   geladen. Anhängen kann Supabase nichts, das Bild muss also öffentlich
   erreichbar bleiben. Ändert sich die Domain, müssen die Adressen in beiden
   Dateien (Logo, Impressum, Datenschutz) mit.
@@ -62,11 +94,8 @@ Supabase ersetzt beim Versand:
 - **„Der Link gilt eine Stunde"** entspricht der Supabase-Einstellung
   *Email OTP Expiration* (Standard 3600 s). Wird die geändert, den Satz in
   beiden Dateien mitziehen.
-- **Absender** ist standardmäßig Supabases eigene Adresse. Ein eigener
-  Absendername kostet einen eigenen SMTP-Dienst (Dashboard → Project
-  Settings → Auth → SMTP Settings). Der Supabase-Standardversand ist
-  zusätzlich streng limitiert und taugt nur zum Ausprobieren, nicht für
-  echte Nutzerzahlen.
+- **Der Absender** kommt aus den SMTP-Einstellungen, nicht aus diesen
+  Dateien (siehe oben).
 
 ## Farben
 
