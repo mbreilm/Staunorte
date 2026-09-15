@@ -169,7 +169,6 @@ function Feld({
         value={wert}
         onChange={(e) => setzen(e.target.value)}
         className="input"
-        style={{ minHeight: "5.5rem", resize: "vertical" }}
       />
     </div>
   );

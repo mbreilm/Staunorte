@@ -165,7 +165,10 @@
   }
   .input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
   .input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
-  textarea.input { min-height: 90px; resize: vertical; }
+  /* Kleinere Rundung als bei einzeiligen Feldern: Derselbe Radius wirkt
+     auf einer hohen Textfläche aufgeblasen und laesst sie wie eine
+     Pille aussehen. */
+  textarea.input { min-height: 90px; resize: vertical; border-radius: var(--radius-sm); }
   .radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
   .radio input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
   .radio .dot { width: 16px; height: 16px; flex: none; border-radius: 50%; border: 1.5px solid var(--color-divider); }
