@@ -15,6 +15,7 @@ import type { ObservableType, PlaceNearby } from "@/lib/supabase/types";
 import { haversineMeters } from "@/lib/geo/distance";
 import { richteMaplibreWorkerEin } from "@/lib/maplibre/setup";
 import { IconStandort } from "@/lib/icons";
+import { onboardingSchonGelaufen } from "@/lib/onboarding";
 import { registerMarkerIcons, markerIconKey } from "./markerIcons";
 import { LocationHint } from "./LocationHint";
 import { PlacePreviewSheet } from "./PlacePreviewSheet";
@@ -386,6 +387,38 @@ export function MapView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- die Karte wird bewusst nur einmal aufgebaut; standortHinweisOderDirekt arbeitet ausschließlich auf Refs und Settern
   }, []);
 
+  // Wird der Standort ANDERSWO freigegeben - im Onboarding beim ersten
+  // Start oder in den Browser-Einstellungen -, bekommt die Karte das sonst
+  // nicht mit: Sie hat ihre Entscheidung beim Aufbau getroffen und bliebe
+  // über München stehen. Die Permissions-API meldet solche Wechsel, und wir
+  // holen die Zentrierung dann nach.
+  useEffect(() => {
+    let status: PermissionStatus | null = null;
+    let verworfen = false;
+
+    navigator.permissions
+      ?.query({ name: "geolocation" })
+      .then((s) => {
+        if (verworfen) return;
+        status = s;
+        s.onchange = () => {
+          if (s.state !== "granted") return;
+          setZeigeStandortHinweis(false);
+          standortVerwenden();
+        };
+      })
+      .catch(() => {
+        // Browser ohne Permissions-API: Dann bleibt es beim Hinweis bzw.
+        // beim Zentrieren-Button - kein Fehlerfall.
+      });
+
+    return () => {
+      verworfen = true;
+      if (status) status.onchange = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- soll nur einmal eingehängt werden; standortVerwenden arbeitet ausschließlich auf Refs und Settern
+  }, []);
+
   // Standortverfolgung pausiert, solange die Karte nicht der aktive Tab ist:
   // Die Karte bleibt dauerhaft gemountet (siehe oben), watchPosition würde
   // sonst auch im Album und im Konto weiterlaufen und Akku ziehen.
@@ -510,6 +543,10 @@ export function MapView() {
   //    Hinweis bleibt deshalb weg; der Zentrieren-Button bleibt sichtbar.
   //  - "prompt" / Permissions-API nicht verfügbar: wie bisher erst erklären,
   //    dann fragen.
+  //  - "prompt", aber das Onboarding läuft gerade zum ersten Mal: Das fragt
+  //    selbst nach dem Standort. Hier noch einmal zu fragen wäre die zweite
+  //    Frage in Folge. Wir warten stattdessen auf die Freigabe (siehe den
+  //    Effekt weiter unten, der auf Änderungen der Berechtigung hört).
   async function standortHinweisOderDirekt() {
     let zustand: PermissionState | null = null;
     try {
@@ -525,6 +562,7 @@ export function MapView() {
       return;
     }
     if (zustand === "denied") return;
+    if (!onboardingSchonGelaufen()) return;
     setZeigeStandortHinweis(true);
   }
 

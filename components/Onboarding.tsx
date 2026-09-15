@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { IconStandort } from "@/lib/icons";
+import {
+  onboardingAlsGezeigtMerken,
+  onboardingSchonGelaufen,
+} from "@/lib/onboarding";
 
-const SCHLUESSEL_GEZEIGT = "baustellenjaeger:onboarding-gezeigt";
 const SCHLUESSEL_BESUCHE = "baustellenjaeger:besuchszaehler";
 const SCHLUESSEL_INSTALL_VERWORFEN = "baustellenjaeger:installhinweis-verworfen";
 const KATEGORIE = process.env.NEXT_PUBLIC_DEFAULT_CATEGORY || "baustelle";
@@ -48,15 +51,7 @@ export function Onboarding() {
       besuche = 1;
     }
 
-    let gezeigt = true;
-    try {
-      gezeigt = window.localStorage.getItem(SCHLUESSEL_GEZEIGT) === "1";
-    } catch {
-      // Kein Storage-Zugriff - Onboarding lieber überspringen als bei
-      // jedem Aufruf erneut zeigen.
-    }
-
-    if (!gezeigt) {
+    if (!onboardingSchonGelaufen()) {
       createClient()
         .from("place_categories")
         .select("name_plural, observable_label, safety_notice, marker_style")
@@ -95,11 +90,7 @@ export function Onboarding() {
   }, []);
 
   function onboardingSchliessen() {
-    try {
-      window.localStorage.setItem(SCHLUESSEL_GEZEIGT, "1");
-    } catch {
-      // s.o.
-    }
+    onboardingAlsGezeigtMerken();
     setZeigeOnboarding(false);
   }
 
