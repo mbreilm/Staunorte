@@ -1,0 +1,114 @@
+<!--
+  Supabase-Vorlage "Confirm signup" - die Mail an Leute, die sich zum
+  ersten Mal mit dieser Adresse anmelden. Siehe README.md im selben Ordner.
+  Inhaltlich fast identisch mit anmelde-link.html; bewusst als zweite
+  vollstaendige Datei, weil E-Mail-HTML keine Bausteine kennt. Wer hier
+  etwas am Aussehen aendert, muss es dort mitziehen.
+
+  Regeln für E-Mail-HTML (nicht "altmodisch", sondern notwendig):
+  - Layout über verschachtelte <table>, nicht über flex/grid. Outlook
+    rendert mit der Word-Engine und kennt beides nicht.
+  - Alle Stile inline. <style>-Blöcke werden von Gmail teils entfernt.
+  - Keine Webfonts, nur Schriftstapel aus vorinstallierten Schriften.
+    Georgia steht hier für Caprasimo (beide kräftige Serifen).
+  - Feste Farben statt CSS-Variablen; die Werte stammen aus
+    app/globals.css und müssen bei einer Palettenänderung mit gepflegt
+    werden.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0; padding:0; background-color:#f5ead8;">
+  <tr>
+    <td align="center" style="padding:32px 12px;">
+
+      <!-- Karte. 600px ist die Breite, die alle Postfächer sicher zeigen. -->
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:600px; background-color:#fdf8ef; border:1px solid #dcd3c4; border-radius:20px;">
+
+        <!-- Kopf: Logo + Wortmarke -->
+        <tr>
+          <td align="center" style="padding:36px 32px 8px 32px;">
+            <img src="https://baustellenjaeger.vercel.app/icons/logo-mail.png"
+                 width="190" alt="Baustellenjäger"
+                 style="display:block; width:190px; max-width:70%; height:auto; border:0;">
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:0 32px 4px 32px; font-family:Georgia,'Times New Roman',serif; font-size:26px; line-height:1.2; color:#201e1d;">
+            Baustellenjäger
+          </td>
+        </tr>
+
+        <!-- Trennlinie -->
+        <tr>
+          <td style="padding:24px 32px 0 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr><td style="height:1px; background-color:#dcd3c4; font-size:0; line-height:0;">&nbsp;</td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Text -->
+        <tr>
+          <td style="padding:28px 32px 0 32px; font-family:Georgia,'Times New Roman',serif; font-size:23px; line-height:1.25; color:#201e1d;">
+            Schön, dass du da bist!
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:12px 32px 0 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:16px; line-height:1.55; color:#474238;">
+            Bestätige einmal kurz deine Adresse, dann kann es losgehen: Baustellen in deiner Nähe finden, einchecken und Fahrzeuge sammeln.
+          </td>
+        </tr>
+
+        <!-- Knopf. Die Farbe liegt auf der <td>, damit auch Outlook ein
+             gefülltes Rechteck zeichnet; das <a> bringt nur die Schrift
+             und die Klickfläche mit. -->
+        <tr>
+          <td style="padding:26px 32px 0 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" bgcolor="#c67139" style="border-radius:14px;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:inline-block; padding:16px 30px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:17px; font-weight:bold; line-height:1; color:#ffffff; text-decoration:none; border-radius:14px;">
+                    E-Mail bestätigen
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 32px 0 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:14px; line-height:1.55; color:#82796a;">
+            Der Link gilt eine Stunde und lässt sich nur einmal benutzen.
+          </td>
+        </tr>
+
+        <!-- Notausgang, falls der Knopf nicht klickbar ist. word-break
+             verhindert, dass die lange Adresse die Karte aufreißt. -->
+        <tr>
+          <td style="padding:20px 32px 0 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:13px; line-height:1.5; color:#82796a;">
+            Klappt der Knopf nicht? Dann kopier diese Adresse in deinen Browser:<br>
+            <span style="color:#8c491a; word-break:break-all;">{{ .ConfirmationURL }}</span>
+          </td>
+        </tr>
+
+        <!-- Fuß -->
+        <tr>
+          <td style="padding:28px 32px 0 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr><td style="height:1px; background-color:#dcd3c4; font-size:0; line-height:0;">&nbsp;</td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 32px 32px 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:12.5px; line-height:1.6; color:#a19786;">
+            Diese Mail ging an {{ .Email }}, weil sich jemand mit dieser Adresse bei Baustellenjäger registrieren wollte. Warst du das nicht, ignorier sie einfach — ohne den Link entsteht kein Konto.
+            <br><br>
+            <a href="https://baustellenjaeger.vercel.app/impressum" style="color:#82796a; text-decoration:underline;">Impressum</a>
+            &nbsp;·&nbsp;
+            <a href="https://baustellenjaeger.vercel.app/datenschutz" style="color:#82796a; text-decoration:underline;">Datenschutz</a>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
