@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Props = {
@@ -15,6 +15,31 @@ export function AuthForm({ redirectPath = "/" }: Props) {
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleVerfuegbar, setGoogleVerfuegbar] = useState(false);
+
+  // Der Google-Knopf erscheint nur, wenn der Anbieter in Supabase auch
+  // wirklich eingeschaltet ist. Solange er dort aus ist, endet ein Tipp
+  // darauf in einer Fehlerseite - eine Sackgasse, und die schlechteste
+  // Sorte davon: eine, die aussieht, als müsste sie funktionieren.
+  //
+  // Bewusst zur Laufzeit abgefragt statt fest im Code: So erscheint der
+  // Knopf von selbst, sobald der Anbieter in Supabase aktiviert wird -
+  // ohne Codeänderung und ohne neues Deployment.
+  //
+  // Schlägt die Abfrage fehl, bleibt der Knopf weg. Ein Weg weniger ist
+  // besser als ein Weg, der ins Leere führt; die Anmeldung per E-Mail
+  // steht unabhängig davon immer zur Verfügung.
+  useEffect(() => {
+    const ziel = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/settings`;
+    fetch(ziel, {
+      headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "" },
+    })
+      .then((antwort) => antwort.json())
+      .then((daten) => setGoogleVerfuegbar(Boolean(daten?.external?.google)))
+      .catch(() => {
+        // s.o. - kein Fehler-UI, der Knopf bleibt einfach aus.
+      });
+  }, []);
 
   function callbackUrl() {
     const url = new URL("/auth/callback", window.location.origin);
@@ -111,21 +136,25 @@ export function AuthForm({ redirectPath = "/" }: Props) {
         </p>
       )}
 
-      <div className="flex items-center gap-3 text-xs text-muted">
-        <span className="h-px flex-1" style={{ background: "var(--color-divider)" }} />
-        oder
-        <span className="h-px flex-1" style={{ background: "var(--color-divider)" }} />
-      </div>
+      {googleVerfuegbar && (
+        <>
+          <div className="flex items-center gap-3 text-xs text-muted">
+            <span className="h-px flex-1" style={{ background: "var(--color-divider)" }} />
+            oder
+            <span className="h-px flex-1" style={{ background: "var(--color-divider)" }} />
+          </div>
 
-      <button
-        type="button"
-        onClick={handleGoogle}
-        disabled={googleLoading}
-        className="btn btn-secondary h-12 text-base"
-      >
-        <GoogleIcon />
-        Mit Google anmelden
-      </button>
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={googleLoading}
+            className="btn btn-secondary h-12 text-base"
+          >
+            <GoogleIcon />
+            Mit Google anmelden
+          </button>
+        </>
+      )}
     </div>
   );
 }
