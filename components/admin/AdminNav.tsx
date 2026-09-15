@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/admin", label: "Meldungen" },
   { href: "/admin/orte", label: "Orte" },
   { href: "/admin/nutzer", label: "Nutzer" },
+  { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/analytics", label: "Analytics" },
 ];
 

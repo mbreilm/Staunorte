@@ -473,6 +473,27 @@ export type Database = {
         Relationships: [];
       };
 
+      feedback: {
+        Row: {
+          id: string;
+          user_id: string;
+          gefaellt: string | null;
+          stoert: string | null;
+          fehlt: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          gefaellt?: string | null;
+          stoert?: string | null;
+          fehlt?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["feedback"]["Insert"]>;
+        Relationships: [];
+      };
+
       holidays: {
         Row: {
           day: string; // date, ISO "YYYY-MM-DD"
@@ -715,6 +736,26 @@ export type Database = {
       };
 
       // Fotoverwaltung (0015) - ebenfalls nur für Admins.
+      feedback_senden: {
+        Args: {
+          p_gefaellt?: string | null;
+          p_stoert?: string | null;
+          p_fehlt?: string | null;
+        };
+        Returns: string;
+      };
+      admin_feedback_liste: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          gefaellt: string | null;
+          stoert: string | null;
+          fehlt: string | null;
+          created_at: string;
+          user_id: string | null;
+          user_email: string | null;
+        }[];
+      };
       admin_ort_fotos: {
         Args: { p_place_id: string };
         Returns: {
