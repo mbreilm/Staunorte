@@ -49,9 +49,22 @@ Das IONOS-Postfach bleibt davon unberührt: Resend verschickt nur, eingehende
 Post an `hallo@` landet weiter über die MX-Einträge bei IONOS. Deshalb als
 Absender bewusst eine Adresse, auf die man auch antworten kann.
 
-Direkt darunter steht **Rate Limits** → *Rate limit for sending emails*. Der
-Standardwert ist niedrig und stammt noch aus der Zeit des eingebauten
-Versands; mit eigenem SMTP kann er gefahrlos hochgesetzt werden.
+Unter **Authentication → Rate Limits** steht *Rate limit for sending emails*,
+seit dem 15.09.2026 auf **100 pro Stunde** (vorher der niedrige Standardwert
+aus der Zeit des eingebauten Versands).
+
+Die tatsächliche Obergrenze liegt damit nicht mehr hier, sondern bei Resend:
+**100 Mails pro UTC-Kalendertag** im Gratistarif, Rückstellung um Mitternacht
+UTC (also 1 bzw. 2 Uhr deutscher Zeit) — kein gleitendes Fenster. Ein
+Andrang könnte das Tageskontingent theoretisch in einer einzigen Stunde
+aufbrauchen; danach lehnt Resend mit 429 `daily_quota_exceeded` ab, bis der
+UTC-Tag wechselt. Die App fängt das ab und sagt „zu viele Anmelde-Links
+angefordert" statt die E-Mail-Adresse zu verdächtigen (siehe
+`anmeldeFehlerText()` in `components/AuthForm.tsx`).
+
+Unabhängig davon bleibt eine Wartezeit pro Adresse bestehen, die verhindert,
+dass eine einzelne Person durch wiederholtes Antippen Mails am laufenden
+Band auslöst.
 
 ## Einspielen
 
