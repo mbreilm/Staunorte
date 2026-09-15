@@ -21,7 +21,9 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     orientation: "portrait",
     background_color: "#FFFFFF",
-    theme_color: "#F2A20C",
+    // Gleiche Akzentfarbe wie in app/layout.tsx (viewport.themeColor) -
+    // bestimmt u.a. die Statusleistenfarbe der installierten App.
+    theme_color: "#c67139",
     icons: [
       {
         src: "/icons/icon-192.png",

@@ -2,9 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-// Der Eintritt (dropIn) dauert 1,2 s - danach bleibt noch ein kurzer Moment,
-// damit die Landung ausschwingt, bevor ausgeblendet wird.
-const ANZEIGE_DAUER_MS = 1500;
+// Zeitbudget des Splashs - alles muss in diese Spanne passen, sonst spielt
+// die Animation ins Leere. Die Abschnitte überlappen bewusst NICHT:
+// Blinzeln bei geschlossenen Augen würde den Blick zur Seite verdecken.
+//   0,00-0,55 s  Fernglas fällt herab und federt
+//   0,62-0,79 s  Doppelblinzeln (Augen noch in Mittelstellung)
+//   0,84-1,08 s  Blick nach links
+//   1,35-1,60 s  Blick nach rechts
+//   ab 1,70 s    Ausblenden
+const ANZEIGE_DAUER_MS = 1700;
 const FADE_DAUER_MS = 250;
 
 /**
@@ -51,7 +57,7 @@ export function LoadingScreen() {
 
         /* Fernglas fliegt von oben herab und federt beim Aufsetzen nach. */
         .splash-fernglas {
-          animation: splashFallen 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: splashFallen 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           transform-origin: center center;
         }
         @keyframes splashFallen {
@@ -60,28 +66,32 @@ export function LoadingScreen() {
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        /* Doppelblinzeln, startet erst nach der Landung. */
+        /* Doppelblinzeln. Liegt bewusst ganz am Anfang des Zyklus statt am
+           Ende - sonst käme das erste Blinzeln erst nach dem Ausblenden.
+           Es ist durch, bevor der Blick zur Seite beginnt (siehe oben). */
         .splash-blinzeln {
-          animation: splashBlinzeln 2.5s infinite ease-in-out;
-          animation-delay: 1.2s;
+          animation: splashBlinzeln 1.5s infinite ease-in-out;
+          animation-delay: 0.55s;
           transform-box: fill-box;
           transform-origin: center center;
         }
         @keyframes splashBlinzeln {
-          0%, 82%, 90%, 100% { transform: scaleY(1); }
-          86%, 94%           { transform: scaleY(0.05); }
+          0%, 2%, 9%, 16%, 100% { transform: scaleY(1); }
+          5%, 12%               { transform: scaleY(0.05); }
         }
 
-        /* Neugieriges Umherschauen: links, rechts, oben, zurück zur Mitte. */
+        /* Neugieriges Umherschauen: links, rechts, oben, zurück zur Mitte.
+           Links und rechts fallen in die Anzeigedauer, der Blick nach oben
+           gehört schon zur Schleife danach. */
         .splash-schauen {
-          animation: splashSchauen 6s infinite ease-in-out;
-          animation-delay: 1.2s;
+          animation: splashSchauen 1.9s infinite ease-in-out;
+          animation-delay: 0.55s;
         }
         @keyframes splashSchauen {
           0%, 100%  { transform: translate(0px, 0px); }
-          15%, 30%  { transform: translate(-5px, -1px); }
-          45%, 60%  { transform: translate(5px, -1px); }
-          75%, 85%  { transform: translate(0px, -4px); }
+          15%, 28%  { transform: translate(-5px, -1px); }
+          42%, 55%  { transform: translate(5px, -1px); }
+          70%, 80%  { transform: translate(0px, -4px); }
         }
       `}</style>
 
@@ -93,50 +103,54 @@ export function LoadingScreen() {
         role="img"
         aria-label="Baustellenjäger"
       >
-        {/* Bauhelm */}
+        {/* Bauhelm. Farben aus der Akzent-Skala in app/globals.css
+            (--color-accent-300 bis -700) statt aus dem Signalgelb der
+            Vorlage - der Splash soll wie der Rest der App aussehen. */}
         <g>
-          <path d="M 55 180 C 55 60, 245 60, 245 180 Z" fill="#FFB703" />
+          <path d="M 55 180 C 55 60, 245 60, 245 180 Z" fill="#d67f48" />
           {/* Licht-Highlight */}
-          <path d="M 80 145 C 85 90, 140 75, 185 75 C 145 79, 90 100, 80 145 Z" fill="#FFE066" />
+          <path d="M 80 145 C 85 90, 140 75, 185 75 C 145 79, 90 100, 80 145 Z" fill="#ffc6a5" />
           {/* Mittelgrat */}
-          <path d="M 136 67 C 142 54, 158 54, 164 67 L 161 170 L 139 170 Z" fill="#FB8500" />
+          <path d="M 136 67 C 142 54, 158 54, 164 67 L 161 170 L 139 170 Z" fill="#b2622d" />
           {/* Stirn-Plakette */}
-          <rect x="138" y="148" width="24" height="15" rx="3" fill="#E07A00" />
+          <rect x="138" y="148" width="24" height="15" rx="3" fill="#8c491a" />
           {/* Krempe */}
           <path
             d="M 30 180 Q 150 160 270 180 C 280 187, 270 196, 255 194 Q 150 174 45 194 C 30 196, 20 187, 30 180 Z"
-            fill="#E07A00"
+            fill="#b2622d"
           />
           <path
             d="M 35 180 Q 150 162 265 180 C 273 185, 263 192, 250 190 Q 150 172 50 190 C 37 192, 27 185, 35 180 Z"
-            fill="#FFB703"
+            fill="#d67f48"
           />
         </g>
 
-        {/* Fernglas */}
+        {/* Fernglas. Gehäuse in den warmen Neutraltönen der App
+            (--color-text bzw. --color-neutral-800/-300/-100), nicht im
+            bläulichen Slate der Vorlage. */}
         <g className="splash-fernglas">
           {/* Verbindungssteg */}
-          <rect x="135" y="152" width="30" height="12" rx="4" fill="#0F172A" />
+          <rect x="135" y="152" width="30" height="12" rx="4" fill="#201e1d" />
 
           {/* Linker Tubus */}
-          <rect x="78" y="136" width="56" height="54" rx="14" fill="#1E293B" />
-          <rect x="74" y="134" width="64" height="10" rx="4" fill="#0F172A" />
-          <circle cx="106" cy="163" r="21" fill="#FFFFFF" />
-          <circle cx="106" cy="163" r="18" fill="#E2E8F0" />
+          <rect x="78" y="136" width="56" height="54" rx="14" fill="#474238" />
+          <rect x="74" y="134" width="64" height="10" rx="4" fill="#201e1d" />
+          <circle cx="106" cy="163" r="21" fill="#f9f4ed" />
+          <circle cx="106" cy="163" r="18" fill="#dcd3c4" />
 
           {/* Rechter Tubus */}
-          <rect x="166" y="136" width="56" height="54" rx="14" fill="#1E293B" />
-          <rect x="162" y="134" width="64" height="10" rx="4" fill="#0F172A" />
-          <circle cx="194" cy="163" r="21" fill="#FFFFFF" />
-          <circle cx="194" cy="163" r="18" fill="#E2E8F0" />
+          <rect x="166" y="136" width="56" height="54" rx="14" fill="#474238" />
+          <rect x="162" y="134" width="64" height="10" rx="4" fill="#201e1d" />
+          <circle cx="194" cy="163" r="21" fill="#f9f4ed" />
+          <circle cx="194" cy="163" r="18" fill="#dcd3c4" />
 
           {/* Augen */}
           <g className="splash-blinzeln">
             <g className="splash-schauen">
-              <circle cx="106" cy="163" r="8" fill="#0F172A" />
-              <circle cx="103" cy="160" r="2.8" fill="#FFFFFF" />
-              <circle cx="194" cy="163" r="8" fill="#0F172A" />
-              <circle cx="191" cy="160" r="2.8" fill="#FFFFFF" />
+              <circle cx="106" cy="163" r="8" fill="#201e1d" />
+              <circle cx="103" cy="160" r="2.8" fill="#f9f4ed" />
+              <circle cx="194" cy="163" r="8" fill="#201e1d" />
+              <circle cx="191" cy="160" r="2.8" fill="#f9f4ed" />
             </g>
           </g>
         </g>
