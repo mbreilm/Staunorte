@@ -46,6 +46,54 @@ const EIGENER_STANDORT_FARBE = "#2d6ea3";
 const ZOOM_UEBERSICHT = 13;
 const ZOOM_STANDORT_BUTTON = 15;
 
+// Merkt sich, dass der Standort in diesem Browser schon einmal freigegeben
+// wurde. Nötig wegen Safari auf dem iPhone: Dort lässt sich die erteilte
+// Berechtigung nicht abfragen (siehe berechtigungsStatus()), und ohne diese
+// Notiz hätten wir bei JEDEM Laden erneut danach gefragt - obwohl längst
+// zugestimmt wurde.
+const STANDORT_ERLAUBT_SCHLUESSEL = "baustellenjaeger:standort-erlaubt";
+
+function standortSchonErlaubt(): boolean {
+  try {
+    return window.localStorage.getItem(STANDORT_ERLAUBT_SCHLUESSEL) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function standortErlaubnisMerken(): void {
+  try {
+    // Erst lesen: Die laufende Standortverfolgung meldet im Gehen dauernd
+    // neue Positionen, und jedes Mal in den Speicher zu schreiben wäre
+    // unnötige Arbeit auf dem Gerät.
+    if (window.localStorage.getItem(STANDORT_ERLAUBT_SCHLUESSEL) === "1") return;
+    window.localStorage.setItem(STANDORT_ERLAUBT_SCHLUESSEL, "1");
+  } catch {
+    // Kein Storage-Zugriff (privater Modus) - dann eben jedes Mal fragen.
+  }
+}
+
+/**
+ * Berechtigungsstatus für den Standort, oder `null`, wenn der Browser
+ * darüber keine Auskunft gibt.
+ *
+ * Bewusst großzügig abgesichert: Safari auf iOS kennt den Deskriptor
+ * "geolocation" nicht. Je nach Version fehlt `navigator.permissions` ganz
+ * oder die Abfrage wirft - teils als abgelehntes Versprechen, teils sofort.
+ * Ein sofortiger Wurf umgeht jedes angehängte `.catch()` und riss vorher
+ * die ganze App mit sich (der Effekt starb, React baute den Baum ab, die
+ * Seite war eingefroren). Deshalb hier alles in einer async-Funktion mit
+ * try/catch - damit wird auch ein sofortiger Wurf zu einem stillen `null`.
+ */
+async function berechtigungsStatus(): Promise<PermissionStatus | null> {
+  try {
+    if (!navigator.permissions?.query) return null;
+    return await navigator.permissions.query({ name: "geolocation" });
+  } catch {
+    return null;
+  }
+}
+
 const ENTPRELLUNG_MS = 300;
 const MIN_RADIUS_M = 300;
 const MAX_RADIUS_M = 50_000;
@@ -396,21 +444,15 @@ export function MapView() {
     let status: PermissionStatus | null = null;
     let verworfen = false;
 
-    navigator.permissions
-      ?.query({ name: "geolocation" })
-      .then((s) => {
-        if (verworfen) return;
-        status = s;
-        s.onchange = () => {
-          if (s.state !== "granted") return;
-          setZeigeStandortHinweis(false);
-          standortVerwenden();
-        };
-      })
-      .catch(() => {
-        // Browser ohne Permissions-API: Dann bleibt es beim Hinweis bzw.
-        // beim Zentrieren-Button - kein Fehlerfall.
-      });
+    berechtigungsStatus().then((s) => {
+      if (verworfen || !s) return;
+      status = s;
+      s.onchange = () => {
+        if (s.state !== "granted") return;
+        setZeigeStandortHinweis(false);
+        standortVerwenden();
+      };
+    });
 
     return () => {
       verworfen = true;
@@ -490,6 +532,9 @@ export function MapView() {
     const map = mapRef.current;
     if (!map) return;
     letzterStandortRef.current = { lat, lon };
+    // Eine Position bekommen wir nur mit Erlaubnis - das ist also der
+    // verlässlichste Beleg dafür, dass zugestimmt wurde.
+    standortErlaubnisMerken();
 
     if (!standortMarkerRef.current) {
       const punkt = document.createElement("div");
@@ -548,20 +593,23 @@ export function MapView() {
   //    Frage in Folge. Wir warten stattdessen auf die Freigabe (siehe den
   //    Effekt weiter unten, der auf Änderungen der Berechtigung hört).
   async function standortHinweisOderDirekt() {
-    let zustand: PermissionState | null = null;
-    try {
-      zustand =
-        (await navigator.permissions?.query({ name: "geolocation" }))?.state ?? null;
-    } catch {
-      // Ältere Browser kennen permissions.query für "geolocation" nicht.
-      zustand = null;
-    }
+    const zustand = (await berechtigungsStatus())?.state ?? null;
 
     if (zustand === "granted") {
       standortVerwenden();
       return;
     }
     if (zustand === "denied") return;
+
+    // `null` heißt nicht "abgelehnt", sondern "der Browser sagt es uns
+    // nicht" - der Normalfall auf dem iPhone. Dann entscheidet unsere
+    // eigene Notiz: Wer schon einmal zugestimmt hat, wird nicht erneut
+    // gefragt. Ohne das kam der Hinweis dort bei jedem Laden wieder.
+    if (zustand === null && standortSchonErlaubt()) {
+      standortVerwenden();
+      return;
+    }
+
     if (!onboardingSchonGelaufen()) return;
     setZeigeStandortHinweis(true);
   }

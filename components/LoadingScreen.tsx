@@ -28,11 +28,37 @@ export function LoadingScreen() {
   const [fertig, setFertig] = useState(false);
 
   useEffect(() => {
+    const start = Date.now();
     const ausblendTimer = setTimeout(() => setAusblenden(true), ANZEIGE_DAUER_MS);
     const fertigTimer = setTimeout(() => setFertig(true), ANZEIGE_DAUER_MS + FADE_DAUER_MS);
+
+    // Rettungsleine. Der Splash liegt als deckende Fläche über der ganzen
+    // App und schluckt jede Berührung - solange er steht, ist die App
+    // unbedienbar. Verlässt man sich allein auf setTimeout, kann er genau
+    // dort hängen bleiben, wo es am meisten schadet: Browser drosseln oder
+    // frieren Timer in Hintergrund-Tabs ein. Auf dem iPhone passiert das
+    // beim Sperren des Geräts, und beim Entsperren stand der Splash noch.
+    //
+    // Deshalb wird beim Zurückkommen nicht auf einen Timer vertraut,
+    // sondern die tatsächlich verstrichene Zeit gemessen. Ist die Spanne
+    // vorbei, verschwindet der Splash sofort.
+    function nachholen() {
+      if (document.visibilityState !== "visible") return;
+      const verstrichen = Date.now() - start;
+      if (verstrichen >= ANZEIGE_DAUER_MS) setAusblenden(true);
+      if (verstrichen >= ANZEIGE_DAUER_MS + FADE_DAUER_MS) setFertig(true);
+    }
+
+    document.addEventListener("visibilitychange", nachholen);
+    // pageshow zusätzlich: Beim Zurückspringen aus dem Vor-/Zurück-Zwischen-
+    // speicher wird die Seite fortgesetzt, ohne dass visibilitychange feuert.
+    window.addEventListener("pageshow", nachholen);
+
     return () => {
       clearTimeout(ausblendTimer);
       clearTimeout(fertigTimer);
+      document.removeEventListener("visibilitychange", nachholen);
+      window.removeEventListener("pageshow", nachholen);
     };
   }, []);
 
