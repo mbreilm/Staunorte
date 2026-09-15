@@ -73,10 +73,28 @@ Supabase kennt dort nur Betreff und HTML.
 
 Supabase ersetzt beim Versand:
 
-- `{{ .ConfirmationURL }}` — der eigentliche Anmeldelink. Steckt zweimal
-  drin: im Knopf und als kopierbare Adresse darunter (für Postfächer, die
-  Knöpfe nicht anzeigen).
+- `{{ .SiteURL }}` — die in *URL Configuration* eingetragene Adresse.
+- `{{ .TokenHash }}` — der Nachweis, mit dem `app/auth/callback/route.ts`
+  die Anmeldung einlöst.
 - `{{ .Email }}` — die Empfängeradresse, unten im Fuß.
+
+Zusammen ergeben die ersten beiden den Link, der zweimal in jeder Vorlage
+steckt (im Knopf und als kopierbare Adresse darunter):
+
+    {{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink&next=%2F
+
+In `registrierung-bestaetigen.html` steht dort `type=signup` statt
+`magiclink` — der Typ muss zur Vorlage passen, sonst weist Supabase den
+Nachweis ab.
+
+**Warum nicht `{{ .ConfirmationURL }}`,** was überall in Beispielen steht:
+Der Weg führt über Supabases eigene `/auth/v1/verify`-Adresse, und die gibt
+die Zugangsdaten im URL-Fragment zurück (`…#access_token=…`). Fragmente
+schickt der Browser niemals an den Server — unsere Callback-Route ist eine
+Server-Route und sieht davon nichts. Die Anmeldung schlug damit immer fehl.
+Der Weg über `token_hash` hat zusätzlich den Vorteil, dass der Link auch
+dann funktioniert, wenn die Mail auf einem anderen Gerät geöffnet wird als
+dem, auf dem sie angefordert wurde.
 
 ## Abhängigkeiten außerhalb dieser Dateien
 
