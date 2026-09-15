@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { User } from "@supabase/supabase-js";
+import { isAuthRetryableFetchError, type User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { AuthGateSheet } from "./AuthGateSheet";
 
@@ -43,7 +43,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const beiAbbruchRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    let verworfen = false;
+
+    // Zwei Schritte, und die Reihenfolge ist der Punkt.
+    //
+    // 1) Die lokal gespeicherte Sitzung lesen. Das geht ohne Netz und
+    //    sofort. Entscheidend auf dem Handy: Nach dem Entsperren ist die
+    //    Verbindung oft noch einen Moment weg.
+    supabase.auth.getSession().then(({ data }) => {
+      if (verworfen) return;
+      setUser(data.session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    // 2) Danach beim Server nachfragen, ob die Sitzung wirklich noch gilt.
+    //    Hier lag der Fehler: Der Rückgabewert `error` wurde ignoriert, und
+    //    eine gescheiterte Netzanfrage sah damit aus wie "abgemeldet" -
+    //    nach jedem Sperren des Bildschirms flog man aus dem Konto.
+    //    Jetzt meldet nur ein echter Auth-Fehler ab; bei einem Netzfehler
+    //    bleibt der Zustand aus Schritt 1 stehen.
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (verworfen) return;
+      if (error) {
+        if (!isAuthRetryableFetchError(error)) setUser(null);
+        setIsLoading(false);
+        return;
+      }
       setUser(data.user);
       setIsLoading(false);
     });
@@ -62,7 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     );
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      verworfen = true;
+      listener.subscription.unsubscribe();
+    };
   }, [supabase]);
 
   const signOut = useCallback(async () => {
