@@ -270,6 +270,13 @@ export function MapView() {
     });
     mapRef.current = map;
 
+    // Diagnose-Zugang. Die Karte ist das Herzstück der App, lässt sich aber
+    // von außen nicht befragen - beim Suchen des NaN-Fehlers auf dem iPhone
+    // hat genau das Stunden gekostet. Über `window.karte` kommt man in der
+    // Browser-Konsole an die Kameraposition heran. Nur lesender Zugriff auf
+    // etwas, das ohnehin im Browser des Betrachters läuft; kein Risiko.
+    (window as unknown as { karte?: MapLibreMap }).karte = map;
+
     // Lädt Baustellen im aktuellen Kartenausschnitt über places_nearby().
     // Der Radius wird aus der sichtbaren Fläche abgeleitet (Abstand
     // Zentrum -> Kartenecke), damit beim Rauszoomen automatisch mehr
