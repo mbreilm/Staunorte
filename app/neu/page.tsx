@@ -81,9 +81,15 @@ export default function OrtErfassen() {
   // ersten Eindruck der App an anderer Stelle.
   useEffect(() => {
     if (!isLoading && !user) {
-      requireAuth("Um einen Ort anzulegen, brauchst du ein Konto.");
+      // Zweites Argument: Wer hier "Vielleicht später" tippt, soll zurück
+      // auf die Karte. Ohne das blieb man im Erfassen-Ablauf stehen,
+      // durfte Fotos aussuchen und einen Standort setzen - und lief erst
+      // ganz am Ende gegen die Wand, weil das Anlegen ein Konto braucht.
+      requireAuth("Um einen Ort anzulegen, brauchst du ein Konto.", () =>
+        router.replace("/"),
+      );
     }
-  }, [isLoading, user, requireAuth]);
+  }, [isLoading, user, requireAuth, router]);
 
   // Fahrzeugkatalog + Kategorie-Metadaten einmal laden - unabhängig vom
   // aktuellen Schritt, damit sie beim Erreichen des Formulars schon da sind.

@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -21,8 +22,13 @@ type AuthContextValue = {
    * Prüft, ob ein Konto vorhanden ist. Wenn nicht, öffnet sie das
    * Anmelde-Bottom-Sheet mit einer Begründung und liefert false zurück -
    * der Aufrufer bricht die Aktion dann einfach ab.
+   *
+   * `beiAbbruch` wird gerufen, wenn das Sheet ohne Anmeldung geschlossen
+   * wird ("Vielleicht später"). Nötig für Seiten, die ohne Konto gar
+   * keinen Sinn ergeben: Auf /neu blieb man sonst im Erfassen-Ablauf
+   * stehen, durfte Fotos auswählen und lief erst ganz am Ende auf.
    */
-  requireAuth: (reason: string) => boolean;
+  requireAuth: (reason: string, beiAbbruch?: () => void) => boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -32,6 +38,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [gateReason, setGateReason] = useState<string | null>(null);
+  // In einer Ref, nicht im State: Das Sheet soll sich beim Setzen nicht
+  // neu aufbauen, und die Funktion wird nur beim Schließen gebraucht.
+  const beiAbbruchRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -44,7 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setIsLoading(false);
         // Anmeldung war erfolgreich - Gate-Sheet schließt sich von selbst.
-        if (session?.user) setGateReason(null);
+        // Anmeldung geglückt: Sheet schließen, aber NICHT die
+        // Ausweichaktion auslösen - die gilt nur fürs Abbrechen.
+        if (session?.user) {
+          beiAbbruchRef.current = null;
+          setGateReason(null);
+        }
       },
     );
 
@@ -56,13 +70,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   const requireAuth = useCallback(
-    (reason: string) => {
+    (reason: string, beiAbbruch?: () => void) => {
       if (user) return true;
+      beiAbbruchRef.current = beiAbbruch ?? null;
       setGateReason(reason);
       return false;
     },
     [user],
   );
+
+  // Geschlossen ohne Anmeldung: die hinterlegte Ausweichaktion ausführen.
+  const gateSchliessen = useCallback(() => {
+    setGateReason(null);
+    const abbruch = beiAbbruchRef.current;
+    beiAbbruchRef.current = null;
+    abbruch?.();
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({ user, isLoading, signOut, requireAuth }),
@@ -72,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={value}>
       {children}
-      <AuthGateSheet reason={gateReason} onClose={() => setGateReason(null)} />
+      <AuthGateSheet reason={gateReason} onClose={gateSchliessen} />
     </AuthContext.Provider>
   );
 }
