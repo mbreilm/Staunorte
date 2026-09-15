@@ -665,14 +665,19 @@ export function MapView() {
     setZeigeStandortHinweis(true);
   }
 
-  function standortVerwenden(zoom = ZOOM_UEBERSICHT) {
+  function standortVerwenden(zoom: number = ZOOM_UEBERSICHT) {
     setZeigeStandortHinweis(false);
+
+    // Zweiter Riegel gegen denselben Fehler: Was hier hereinkommt, geht
+    // direkt in die Kameraposition der Karte. Ein einziger unsauberer
+    // Aufruf reicht, um sie unbrauchbar zu machen.
+    const zielZoom = Number.isFinite(zoom) ? zoom : ZOOM_UEBERSICHT;
 
     if (!("geolocation" in navigator)) return; // alter Browser: stiller Fallback
 
     // Zentriert wird, sobald die erste Position da ist - egal ob sie aus
     // getCurrentPosition() oder aus der laufenden Verfolgung kommt.
-    zentrierenZoomRef.current = zoom;
+    zentrierenZoomRef.current = zielZoom;
     standortVerfolgen();
     navigator.geolocation.getCurrentPosition(
       (position) =>
@@ -746,7 +751,14 @@ export function MapView() {
       >
         {zeigeStandortHinweis && (
           <LocationHint
-            onUseLocation={standortVerwenden}
+            // Nicht `onUseLocation={standortVerwenden}`: React reicht jedem
+            // Klick-Handler das Ereignis als erstes Argument durch. Das
+            // landete dann als Zoomstufe in der Karte und machte ihre
+            // Kameraposition zu NaN - danach warf jede Fingerbewegung,
+            // und die Karte war tot. TypeScript kann das nicht sehen,
+            // weil eine Funktion mit optionalem Parameter zu `() => void`
+            // passt.
+            onUseLocation={() => standortVerwenden()}
             onDismiss={() => setZeigeStandortHinweis(false)}
           />
         )}
