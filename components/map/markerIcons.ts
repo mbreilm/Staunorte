@@ -68,16 +68,20 @@ function zeichneIcon(opts: {
   zeigePunkt: boolean;
   zeigeStern: boolean;
 }): ImageData {
-  // 48 physische Pixel = 24 CSS-Pixel bei pixelRatio 2 - für scharfe
-  // Marker auch auf Retina-Displays.
-  const size = 48;
+  // 56 physische Pixel = 28 CSS-Pixel bei pixelRatio 2 - für scharfe
+  // Marker auch auf Retina-Displays. Die Fläche ist groesser als der Ring
+  // braucht: Der Merk-Stern sass vorher am Rand der Zeichenflaeche fest
+  // und konnte deshalb nicht groesser werden.
+  const size = 56;
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d")!;
 
   const mitte = size / 2;
-  const radius = size / 2 - 8; // Rand lässt Platz für den Aktivitäts-Punkt
+  // Fester Ringradius statt aus der Flaechengroesse abgeleitet: Der Kreis
+  // soll gleich gross bleiben, auch wenn die Flaeche drumherum waechst.
+  const radius = 16;
 
   ctx.beginPath();
   ctx.arc(mitte, mitte, radius, 0, Math.PI * 2);
@@ -111,9 +115,11 @@ function zeichneIcon(opts: {
   }
 
   // Stern unten links - gegenueber dem Aktivitaets-Punkt oben rechts,
-  // damit sich beide nie ueberdecken.
+  // damit sich beide nie ueberdecken. Deutlich groesser als der
+  // Aktivitaets-Punkt: Er soll auf einen Blick auffallen, auch auf den
+  // gestrichelten Rändern der importierten Orte.
   if (opts.zeigeStern) {
-    zeichneStern(ctx, mitte - radius * 0.72, mitte + radius * 0.72, 7.5);
+    zeichneStern(ctx, mitte - radius * 0.85, mitte + radius * 0.85, 11);
   }
 
   return ctx.getImageData(0, 0, size, size);
@@ -136,12 +142,14 @@ function zeichneStern(
     else ctx.lineTo(x, y);
   }
   ctx.closePath();
-  ctx.fillStyle = MERK_STERN;
-  ctx.fill();
-  // Weisser Rand, damit der Stern auch auf dunklen Kacheln steht.
-  ctx.lineWidth = 2;
+  // Weisser Rand zuerst und breit: So bekommt der Stern einen Saum, der
+  // ihn von allem darunter abhebt - auch vom gestrichelten Ring.
+  ctx.lineWidth = 3.5;
+  ctx.lineJoin = "round";
   ctx.strokeStyle = "#ffffff";
   ctx.stroke();
+  ctx.fillStyle = MERK_STERN;
+  ctx.fill();
 }
 
 // Minimalistische Turmdrehkran-Silhouette - passt zu keiner einzelnen
