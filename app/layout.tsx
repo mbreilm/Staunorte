@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/components/AuthProvider";
+import { MerklisteProvider } from "@/components/merkliste/MerklisteProvider";
 import { Onboarding } from "@/components/Onboarding";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
@@ -95,6 +96,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               DOM-Element, das Flex-Layout des Rahmens bleibt also
               unveraendert. */}
           <AuthProvider>
+          <MerklisteProvider>
           {/* Dauerhaft gemountet (nicht pro Route) - siehe components/map/MapView.tsx. */}
           <MapView />
           {/* Einziger scrollender Bereich im Rahmen - BottomNav & Co. sind
@@ -113,6 +115,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <LoadingScreen />
           <AnalyticsProvider />
           <SeitenaufrufZaehler />
+          </MerklisteProvider>
           </AuthProvider>
         </div>
       </body>

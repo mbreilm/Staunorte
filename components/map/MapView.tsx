@@ -16,6 +16,7 @@ import { haversineMeters } from "@/lib/geo/distance";
 import { richteMaplibreWorkerEin } from "@/lib/maplibre/setup";
 import { IconStandort } from "@/lib/icons";
 import { onboardingSchonGelaufen } from "@/lib/onboarding";
+import { useMerkliste } from "@/components/merkliste/MerklisteProvider";
 import { registerMarkerIcons, markerIconKey } from "./markerIcons";
 import { LocationHint } from "./LocationHint";
 import { PlacePreviewSheet } from "./PlacePreviewSheet";
@@ -140,6 +141,7 @@ function formatiereRadius(meter: number): string {
 
 function baueFeatureCollection(
   orte: PlaceNearby[],
+  gemerkt: ReadonlySet<string>,
 ): GeoJSON.FeatureCollection<GeoJSON.Point, OrtEigenschaften> {
   return {
     type: "FeatureCollection",
@@ -149,7 +151,7 @@ function baueFeatureCollection(
       const farbig = ort.fresh_observables > 0;
       const gestrichelt = ort.source === "open_data" && !ort.is_confirmed;
       const aktiv = ort.activity === "aktiv";
-      const gemerkt = ort.is_bookmarked === true;
+      const istGemerkt = gemerkt.has(ort.id);
 
       return {
         type: "Feature",
@@ -158,7 +160,7 @@ function baueFeatureCollection(
         properties: {
           id: ort.id,
           title: ort.title,
-          iconKey: markerIconKey({ farbig, gestrichelt, aktiv, gemerkt }),
+          iconKey: markerIconKey({ farbig, gestrichelt, aktiv, gemerkt: istGemerkt }),
         },
       };
     }),
@@ -174,6 +176,7 @@ function baueFeatureCollection(
 export function MapView() {
   const pathname = usePathname();
   const aktiverTab = pathname === "/";
+  const { gemerkt } = useMerkliste();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const entprellungRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -213,6 +216,9 @@ export function MapView() {
     ausgewaehlteTypIds: [] as string[],
   });
   const ladeOrteRef = useRef<() => void>(() => {});
+  // Der Kartenaufbau laeuft nur einmal und wuerde `gemerkt` sonst in seinem
+  // ersten Stand einfrieren - deshalb ueber eine Ref hereinreichen.
+  const gemerktRef = useRef<ReadonlySet<string>>(gemerkt);
   const kartenBereitRef = useRef(false);
 
   // Eigener Standort: Marker + laufende Verfolgung. `verfolgungGewuenscht`
@@ -332,7 +338,7 @@ export function MapView() {
 
       orteRef.current = gefiltert;
       const quelle = map.getSource("orte") as GeoJSONSource | undefined;
-      quelle?.setData(baueFeatureCollection(gefiltert));
+      quelle?.setData(baueFeatureCollection(gefiltert, gemerktRef.current));
     }
     ladeOrteRef.current = ladeOrte;
 
@@ -498,6 +504,16 @@ export function MapView() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- soll nur einmal eingehängt werden; standortVerwenden arbeitet ausschließlich auf Refs und Settern
   }, []);
+
+  // Merkliste geaendert? Dann die Marker sofort neu zeichnen - ohne die
+  // Orte erneut zu laden. Nimmt jemand auf der Listenseite oder der
+  // Detailseite einen Ort herunter, verschwindet der Stern damit auch auf
+  // der Karte, ohne dass die Seite neu geladen werden muss.
+  useEffect(() => {
+    gemerktRef.current = gemerkt;
+    const quelle = mapRef.current?.getSource("orte") as GeoJSONSource | undefined;
+    quelle?.setData(baueFeatureCollection(orteRef.current, gemerkt));
+  }, [gemerkt]);
 
   // Standortverfolgung pausiert, solange die Karte nicht der aktive Tab ist:
   // Die Karte bleibt dauerhaft gemountet (siehe oben), watchPosition würde

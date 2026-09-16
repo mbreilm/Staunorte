@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { createClient } from "@/lib/supabase/client";
+import { useMerkliste } from "./MerklisteProvider";
 
 /**
  * "Merken"-Knopf: legt einen Ort auf die persönliche Merkliste oder nimmt
@@ -18,15 +18,23 @@ export function MerkenButton({
   variante = "voll",
 }: {
   placeId: string;
+  /**
+   * Serverseitig ermittelter Startwert (Detailseite). Gilt nur, solange
+   * der Provider seine Liste noch nicht geladen hat - danach zaehlt die
+   * gemeinsame Quelle, damit alle Anzeigen zusammenpassen.
+   */
   initialGemerkt: boolean;
   /** "voll" = mit Beschriftung, "kompakt" = nur der Stern (enge Leisten). */
   variante?: "voll" | "kompakt";
 }) {
   const { user, requireAuth } = useAuth();
-  const [gemerkt, setGemerkt] = useState(initialGemerkt);
+  const { gemerkt: liste, geladen, umschalten } = useMerkliste();
   const [laeuft, setLaeuft] = useState(false);
+  // Bis die gemeinsame Liste steht, gilt der serverseitige Startwert -
+  // sonst blitzt der Knopf kurz im falschen Zustand auf.
+  const gemerkt = geladen ? liste.has(placeId) : initialGemerkt;
 
-  async function umschalten() {
+  async function antippen() {
     if (!user) {
       requireAuth(
         "Zum Merken brauchst du ein Konto - sonst wüssten wir nicht, wessen Liste es ist.",
@@ -34,27 +42,15 @@ export function MerkenButton({
       return;
     }
 
-    const vorher = gemerkt;
-    setGemerkt(!vorher);
     setLaeuft(true);
-
-    const { data, error } = await createClient().rpc("merkliste_umschalten", {
-      p_place_id: placeId,
-    });
+    await umschalten(placeId);
     setLaeuft(false);
-
-    if (error) {
-      setGemerkt(vorher);
-      console.error("Merkliste umschalten fehlgeschlagen:", error.message);
-      return;
-    }
-    if (typeof data === "boolean") setGemerkt(data);
   }
 
   return (
     <button
       type="button"
-      onClick={umschalten}
+      onClick={antippen}
       disabled={laeuft}
       aria-pressed={gemerkt}
       aria-label={gemerkt ? "Von der Merkliste nehmen" : "Auf die Merkliste setzen"}

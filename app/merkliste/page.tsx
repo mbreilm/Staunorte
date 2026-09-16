@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
+import { useMerkliste } from "@/components/merkliste/MerklisteProvider";
 import { ZurueckPfeil } from "@/components/icons/ZurueckPfeil";
 import { AktivitaetsBadge } from "@/components/place/AktivitaetsBadge";
 import { AKTIVITAETS_TEXT_DETAIL } from "@/lib/format/activity";
@@ -22,6 +23,7 @@ type Eintrag = Database["public"]["Functions"]["merkliste_orte"]["Returns"][numb
  */
 export default function MerklistePage() {
   const { user, isLoading, requireAuth } = useAuth();
+  const { umschalten } = useMerkliste();
   const router = useRouter();
   const [eintraege, setEintraege] = useState<Eintrag[] | null>(null);
   const [position, setPosition] = useState<EigenePosition | null>(null);
@@ -97,10 +99,10 @@ export default function MerklistePage() {
   async function entfernen(placeId: string) {
     // Sofort aus der Liste nehmen; die Datenbank zieht nach.
     setEintraege((alt) => (alt ?? []).filter((e) => e.id !== placeId));
-    const { error } = await createClient().rpc("merkliste_umschalten", {
-      p_place_id: placeId,
-    });
-    if (error) laden(); // im Zweifel neu laden statt falsch anzeigen
+    // Ueber den gemeinsamen Zustand, nicht direkt per RPC: Nur so
+    // verschwindet der Stern gleichzeitig auf der Karte.
+    const jetztDrin = await umschalten(placeId);
+    if (jetztDrin) laden(); // hat nicht geklappt - lieber neu laden
   }
 
   return (
