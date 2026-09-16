@@ -8,10 +8,44 @@ import { BottomNav } from "@/components/nav/BottomNav";
 import { MapView } from "@/components/map/MapView";
 import "./globals.css";
 
+const BESCHREIBUNG =
+  "Finde die spannendsten Baustellen in der Nähe und schau dir an, welche Fahrzeuge dort gerade arbeiten.";
+
 export const metadata: Metadata = {
+  // Absolute Basis für alle Adressen in den Metadaten. Ohne sie baut
+  // Next.js relative Bildpfade nicht zu vollständigen Adressen aus - und
+  // eine Linkvorschau in WhatsApp oder Signal kann mit "/og-bild.png"
+  // nichts anfangen, das Bild bliebe leer.
+  metadataBase: new URL("https://baustellenjaeger.com"),
   title: "Baustellenjäger",
-  description:
-    "Finde die spannendsten Baustellen in der Nähe und schau dir an, welche Fahrzeuge dort gerade arbeiten.",
+  description: BESCHREIBUNG,
+  // Vorschau beim Teilen des Links. 1200x630 ist das Format, das
+  // Messenger und soziale Netze erwarten; kleinere Bilder werden von
+  // manchen Diensten gar nicht erst angezeigt.
+  openGraph: {
+    type: "website",
+    locale: "de_DE",
+    siteName: "Baustellenjäger",
+    title: "Baustellenjäger",
+    description: BESCHREIBUNG,
+    url: "https://baustellenjaeger.com",
+    images: [
+      {
+        url: "/og-bild.png",
+        width: 1200,
+        height: 630,
+        alt: "Bauhelm mit Fernglas - das Logo von Baustellenjäger",
+      },
+    ],
+  },
+  // X/Twitter wertet die OpenGraph-Angaben nur teilweise aus und braucht
+  // zusätzlich den Kartentyp, sonst erscheint nur ein kleines Icon.
+  twitter: {
+    card: "summary_large_image",
+    title: "Baustellenjäger",
+    description: BESCHREIBUNG,
+    images: ["/og-bild.png"],
+  },
   // Sorgt dafür, dass die App auf iOS ebenfalls ohne Browser-Leiste startet.
   appleWebApp: {
     capable: true,
