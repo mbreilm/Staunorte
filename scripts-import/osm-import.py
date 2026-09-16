@@ -11,7 +11,7 @@ Der Lauf ist wiederholbar: open_data_ort_anlegen() schreibt ueber
 
 Aufruf:  python3 scripts-import/osm-import.py [--trocken]
 """
-import json, math, os, sys, time, urllib.parse, urllib.request, datetime
+import json, math, os, re, sys, time, urllib.parse, urllib.request, datetime
 
 MAX_ALTER_TAGE = 180
 MIN_FLAECHE_M2 = 800
@@ -28,6 +28,27 @@ def hole(url, daten=None, kopf=None, timeout=120):
     r = urllib.request.Request(url, data=daten, headers={"User-Agent": UA, **(kopf or {})})
     with urllib.request.urlopen(r, timeout=timeout) as a:
         return json.loads(a.read().decode())
+
+
+def warte_auf_slot():
+    """Overpass sagt selbst, wann wieder eine Abfrage frei ist.
+
+    Ohne das laeuft man in "Connection reset by peer" - der Dienst kappt
+    die Verbindung, statt hoeflich abzulehnen. Beim ersten Anlauf hat
+    genau das die Haelfte der Kacheln gekostet, und zwar ausgerechnet die
+    Innenstadt-Kacheln am Ende der Liste.
+    """
+    try:
+        r = urllib.request.Request("https://overpass-api.de/api/status",
+                                   headers={"User-Agent": UA})
+        with urllib.request.urlopen(r, timeout=20) as a:
+            txt = a.read().decode()
+    except Exception:
+        time.sleep(10); return
+    if "slots available" in txt:
+        return
+    wartezeiten = [int(x) for x in re.findall(r"in (\d+) seconds", txt)]
+    time.sleep(min(wartezeiten) + 2 if wartezeiten else 20)
 
 
 def overpass(sued, nord, west, ost):
@@ -71,15 +92,28 @@ def main():
                for w in [WEST + i * SCHRITT for i in range(int((OST - WEST) / SCHRITT) + 1)]]
     print(f"{len(kacheln)} Kacheln", flush=True)
 
+    puffer = os.path.join(os.path.dirname(__file__), ".kachel-puffer.json")
+    cache = json.load(open(puffer)) if os.path.exists(puffer) else {}
+
     for i, (s, n, w, o) in enumerate(kacheln, 1):
-        for versuch in range(3):
-            try:
-                els = overpass(s, n, w, o); break
-            except Exception as e:
-                if versuch == 2:
-                    print(f"  Kachel {i} uebersprungen: {e}"); els = []
-                else:
-                    time.sleep(15 * (versuch + 1))
+        schluessel = f"{s:.2f},{n:.2f},{w:.2f},{o:.2f}"
+        if schluessel in cache:
+            els = cache[schluessel]
+        else:
+            els = None
+            for versuch in range(4):
+                warte_auf_slot()
+                try:
+                    els = overpass(s, n, w, o); break
+                except Exception as e:
+                    if versuch == 3:
+                        print(f"  Kachel {i} bleibt offen: {e}")
+                    else:
+                        time.sleep(30)
+            if els is None:
+                continue               # offen lassen, naechster Lauf holt sie
+            cache[schluessel] = els
+            json.dump(cache, open(puffer, "w"))
         for e in els:
             if e["id"] in gesehen:
                 continue
@@ -94,7 +128,6 @@ def main():
             roh.append({"id": e["id"], "lat": sum(p["lat"] for p in g) / len(g),
                         "lon": sum(p["lon"] for p in g) / len(g), "f": f,
                         "alter": alter, "name": (e.get("tags") or {}).get("name")})
-        time.sleep(4)
         if i % 10 == 0:
             print(f"  {i}/{len(kacheln)} Kacheln, {len(roh)} Treffer", flush=True)
 
