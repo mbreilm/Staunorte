@@ -219,6 +219,7 @@ export function MapView() {
   // Der Kartenaufbau laeuft nur einmal und wuerde `gemerkt` sonst in seinem
   // ersten Stand einfrieren - deshalb ueber eine Ref hereinreichen.
   const gemerktRef = useRef<ReadonlySet<string>>(gemerkt);
+  const warAktivRef = useRef(false);
   const kartenBereitRef = useRef(false);
 
   // Eigener Standort: Marker + laufende Verfolgung. `verfolgungGewuenscht`
@@ -514,6 +515,33 @@ export function MapView() {
     const quelle = mapRef.current?.getSource("orte") as GeoJSONSource | undefined;
     quelle?.setData(baueFeatureCollection(orteRef.current, gemerkt));
   }, [gemerkt]);
+
+  // Beim Zurueckkehren zur Karte die Orte neu laden.
+  //
+  // Die Karte bleibt dauerhaft eingehaengt und laedt sonst nur beim
+  // Verschieben, Zoomen oder Filtern nach. Alles, was anderswo passiert,
+  // bekaeme sie nie mit: ein gerade erfasster Ort fehlte auf der Karte,
+  // ein Marker bliebe nach dem Check-in grau statt farbig, ein im
+  // Admin-Bereich ausgeblendeter Ort staende weiter da - jeweils bis man
+  // die Karte einmal anfasst.
+  //
+  // Bewusst hier und nicht an jeder einzelnen Aktion: Sonst muss man bei
+  // jedem neuen Feature daran denken, die Karte zu benachrichtigen, und
+  // vergisst genau eines. Kosten sind eine Abfrage pro Rueckkehr - dieselbe,
+  // die beim Verschieben ohnehin laeuft.
+  useEffect(() => {
+    // Nur beim WECHSEL auf die Karte, nicht beim ersten Einhaengen - dort
+    // laedt die Karte ohnehin selbst, sonst faenden zwei Abfragen statt
+    // einer statt.
+    const wurdeAktiv = aktiverTab && !warAktivRef.current;
+    warAktivRef.current = aktiverTab;
+    // Geprueft wird, ob die Karte existiert - NICHT, ob ihr Stil fertig
+    // geladen ist. Der Unterschied ist entscheidend: Die Orte kommen auch
+    // ueber "moveend" herein, ganz ohne das "load"-Ereignis. Mit der
+    // falschen Bedingung blockierte der Waechter genau dann, wenn er
+    // greifen sollte.
+    if (wurdeAktiv && mapRef.current) ladeOrteRef.current();
+  }, [aktiverTab]);
 
   // Standortverfolgung pausiert, solange die Karte nicht der aktive Tab ist:
   // Die Karte bleibt dauerhaft gemountet (siehe oben), watchPosition würde
