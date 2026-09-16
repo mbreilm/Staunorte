@@ -17,9 +17,8 @@ type Eintrag = Database["public"]["Functions"]["merkliste_orte"]["Returns"][numb
 /**
  * Die persönliche Merkliste - "wo will ich als Nächstes hin".
  *
- * Sortiert nach Entfernung, wenn der Standort freigegeben ist; sonst nach
- * dem Zeitpunkt des Merkens. Die Sortierung übernimmt die Datenbank, das
- * Frontend reicht nur die Position durch.
+ * Reihenfolge: zuletzt gemerkt zuerst. Die Entfernung steht als Zusatz
+ * dabei, sobald der Standort vorliegt, bestimmt aber nicht die Sortierung.
  */
 export default function MerklistePage() {
   const { user, isLoading, requireAuth } = useAuth();
@@ -79,17 +78,20 @@ export default function MerklistePage() {
     };
   }, []);
 
+  // Reihenfolge: zuletzt gemerkt zuerst - so liefert es die Datenbank,
+  // hier wird nichts umsortiert. Die Entfernung wird nur ergänzt, sobald
+  // der Standort da ist; sie ist eine Zusatzinfo, kein Ordnungskriterium.
+  // (Nach Entfernung zu sortieren hiesse, dass die Liste unter dem Finger
+  // die Reihenfolge wechselt, sobald das GPS antwortet.)
   const angezeigt = useMemo(() => {
     if (!eintraege || !position) return eintraege;
-    return eintraege
-      .map((e) => ({
-        ...e,
-        distance_m: haversineMeters(
-          { lat: position.lat, lon: position.lon },
-          { lat: e.lat, lon: e.lon },
-        ),
-      }))
-      .sort((a, b) => (a.distance_m ?? 0) - (b.distance_m ?? 0));
+    return eintraege.map((e) => ({
+      ...e,
+      distance_m: haversineMeters(
+        { lat: position.lat, lon: position.lon },
+        { lat: e.lat, lon: e.lon },
+      ),
+    }));
   }, [eintraege, position]);
 
   async function entfernen(placeId: string) {
