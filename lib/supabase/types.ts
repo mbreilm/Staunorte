@@ -524,10 +524,20 @@ export type Database = {
 
       // Ein Seitenaufruf = eine Zeile. Bewusst ohne jede Spalte, die sich
       // einer Person zuordnen ließe (0015).
-      page_views: {
-        Row: { id: number; created_at: string };
-        Insert: { id?: number; created_at?: string };
-        Update: Partial<Database["public"]["Tables"]["page_views"]["Insert"]>;
+      app_sessions: {
+        Row: {
+          id: number;
+          session_id: string;
+          angemeldet: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          session_id: string;
+          angemeldet?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["app_sessions"]["Insert"]>;
         Relationships: [];
       };
     };
@@ -747,8 +757,11 @@ export type Database = {
           nutzer_gesamt: number;
           nutzer_diese_woche: number;
           offene_meldungen: number;
-          seitenaufrufe_heute: number;
           fotos_gesamt: number;
+          sitzungen_heute: number;
+          sitzungen_diese_woche: number;
+          sitzungen_mit_konto_diese_woche: number;
+          orte_mit_checkin: number;
         }[];
       };
 

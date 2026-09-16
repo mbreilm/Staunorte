@@ -4,7 +4,7 @@ import { MerklisteProvider } from "@/components/merkliste/MerklisteProvider";
 import { Onboarding } from "@/components/Onboarding";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
-import { SeitenaufrufZaehler } from "@/components/analytics/SeitenaufrufZaehler";
+import { SitzungsZaehler } from "@/components/analytics/SitzungsZaehler";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { MapView } from "@/components/map/MapView";
 import "./globals.css";
@@ -114,7 +114,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               Laden kurz alles andere (Karte, Onboarding) verdecken. */}
           <LoadingScreen />
           <AnalyticsProvider />
-          <SeitenaufrufZaehler />
+          <SitzungsZaehler />
           </MerklisteProvider>
           </AuthProvider>
         </div>

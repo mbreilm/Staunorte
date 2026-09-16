@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ZurueckPfeil } from "@/components/icons/ZurueckPfeil";
 
+// Übersicht zuerst: Beim Öffnen des Admin-Bereichs interessiert
+// "läuft es?", nicht die Meldungsliste - die ist meistens leer.
 const LINKS = [
-  { href: "/admin", label: "Meldungen" },
+  { href: "/admin", label: "Übersicht" },
+  { href: "/admin/meldungen", label: "Meldungen" },
   { href: "/admin/orte", label: "Orte" },
   { href: "/admin/nutzer", label: "Nutzer" },
   { href: "/admin/feedback", label: "Feedback" },
-  { href: "/admin/analytics", label: "Analytics" },
 ];
 
 export function AdminNav() {

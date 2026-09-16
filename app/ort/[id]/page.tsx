@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -10,6 +11,7 @@ import { FotoGalerie } from "@/components/place/FotoGalerie";
 import { FahrzeugListe } from "@/components/place/FahrzeugListe";
 import { RouteButton } from "@/components/place/RouteButton";
 import { MerkenButton } from "@/components/merkliste/MerkenButton";
+import { TeilenButton } from "@/components/place/TeilenButton";
 import { ArbeitszeitenBearbeitenButton } from "@/components/arbeitszeiten/ArbeitszeitenBearbeitenButton";
 import { formatArbeitszeiten } from "@/lib/format/arbeitszeiten";
 import { leiteMusterAb } from "@/lib/format/activityPattern";
@@ -18,6 +20,71 @@ const WERTENDE_CHECKINS_FUER_MUSTER = 8;
 
 const FOTO_BUCKET = "place-photos";
 const FOTO_ALTER_HINWEIS_TAGE = 90;
+
+/**
+ * Eigene Linkvorschau je Baustelle.
+ *
+ * Ohne das sähe jeder geteilte Link gleich aus: "Baustellenjäger" mit dem
+ * Logo. Wer einem Freund eine bestimmte Baustelle schickt, will aber
+ * genau die zeigen - mit Namen, Adresse und dem Foto, das jemand dort
+ * gemacht hat. Erst damit wird aus "schau mal, eine App" ein "schau mal,
+ * diese Baustelle".
+ */
+export async function generateMetadata({
+  params,
+}: PageProps<"/ort/[id]">): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: ort } = await supabase
+    .from("places")
+    .select("title, address, note")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!ort) return { title: "Ort nicht gefunden" };
+
+  const { data: foto } = await supabase
+    .from("place_photos")
+    .select("storage_path")
+    .eq("place_id", id)
+    .eq("moderation_status", "ok")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // Foto der Baustelle, sonst das allgemeine Vorschaubild - ein Link ohne
+  // Bild wird von Messengern oft gar nicht als Vorschau angezeigt.
+  const bild = foto
+    ? supabase.storage.from(FOTO_BUCKET).getPublicUrl(foto.storage_path).data
+        .publicUrl
+    : "/og-bild.png";
+
+  const beschreibung = [ort.address, ort.note]
+    .filter(Boolean)
+    .join(" · ")
+    .slice(0, 200);
+
+  return {
+    title: ort.title,
+    description: beschreibung || "Schau dir an, welche Fahrzeuge hier arbeiten.",
+    openGraph: {
+      type: "article",
+      locale: "de_DE",
+      siteName: "Baustellenjäger",
+      title: ort.title,
+      description: beschreibung || "Schau dir an, welche Fahrzeuge hier arbeiten.",
+      url: `/ort/${id}`,
+      images: [{ url: bild, alt: ort.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ort.title,
+      description: beschreibung || "Schau dir an, welche Fahrzeuge hier arbeiten.",
+      images: [bild],
+    },
+  };
+}
 
 export default async function OrtDetailSeite({
   params,
@@ -207,8 +274,9 @@ export default async function OrtDetailSeite({
           {standort && <RouteButton lat={standort.lat} lon={standort.lon} />}
         </div>
 
-        <div className="mt-2 flex">
+        <div className="mt-2 flex gap-2">
           <MerkenButton placeId={id} initialGemerkt={merkEintrag !== null} />
+          <TeilenButton titel={ort.title} />
         </div>
 
         <div className="mt-6 text-center">
