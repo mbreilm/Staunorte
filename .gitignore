@@ -44,3 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*
+
+# Zwischenspeicher des OSM-Imports - reine Rohdaten, gehoeren nicht ins Repo
+scripts-import/.kachel-puffer.json
