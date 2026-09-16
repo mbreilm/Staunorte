@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Map as MapLibreMap,
-  Marker,
   type GeoJSONSource,
   type MapLayerMouseEvent,
 } from "maplibre-gl";
@@ -15,8 +14,9 @@ import type { ObservableType, PlaceNearby } from "@/lib/supabase/types";
 import { haversineMeters } from "@/lib/geo/distance";
 import { richteMaplibreWorkerEin } from "@/lib/maplibre/setup";
 import { IconStandort } from "@/lib/icons";
-import { onboardingSchonGelaufen } from "@/lib/onboarding";
 import { useMerkliste } from "@/components/merkliste/MerklisteProvider";
+import { sindKoordinatenBrauchbar } from "./standortHelfer";
+import { useEigenerStandort } from "./useEigenerStandort";
 import { registerMarkerIcons, markerIconKey } from "./markerIcons";
 import { LocationHint } from "./LocationHint";
 import { PlacePreviewSheet } from "./PlacePreviewSheet";
@@ -32,93 +32,6 @@ const NOTFALL_AKZENTFARBE = "#c67139";
 // Notfall-Fallback für observable_label - bewusst neutral, keine
 // Kategoriesprache (CLAUDE.md Regel 2), nur falls die Abfrage fehlschlägt.
 const NOTFALL_BEOBACHTUNGSLABEL = "Beobachtungen";
-
-// Bewusst kühl und damit außerhalb der warmen Erdton-Palette: Der eigene
-// Standort darf nie mit einem Ort verwechselt werden, und Blau ist für
-// "hier bin ich" auf Karten die weltweit gelernte Farbe.
-const EIGENER_STANDORT_FARBE = "#2d6ea3";
-
-// Zoomstufen rund um den eigenen Standort. Die Übersicht ist bewusst
-// weiter draußen als der Zentrieren-Button: Beim Öffnen der App will man
-// sehen, was in der Umgebung los ist (der Suchradius leitet sich aus dem
-// sichtbaren Ausschnitt ab, weiter draußen = mehr Baustellen). Tippt man
-// dagegen aktiv auf "Auf meinen Standort zentrieren", will man wissen, wo
-// genau man steht - dort darf es näher heran.
-const ZOOM_UEBERSICHT = 13;
-const ZOOM_STANDORT_BUTTON = 15;
-
-// Merkt sich, dass der Standort in diesem Browser schon einmal freigegeben
-// wurde. Nötig wegen Safari auf dem iPhone: Dort lässt sich die erteilte
-// Berechtigung nicht abfragen (siehe berechtigungsStatus()), und ohne diese
-// Notiz hätten wir bei JEDEM Laden erneut danach gefragt - obwohl längst
-// zugestimmt wurde.
-const STANDORT_ERLAUBT_SCHLUESSEL = "baustellenjaeger:standort-erlaubt";
-
-function standortSchonErlaubt(): boolean {
-  try {
-    return window.localStorage.getItem(STANDORT_ERLAUBT_SCHLUESSEL) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function standortErlaubnisMerken(): void {
-  try {
-    // Erst lesen: Die laufende Standortverfolgung meldet im Gehen dauernd
-    // neue Positionen, und jedes Mal in den Speicher zu schreiben wäre
-    // unnötige Arbeit auf dem Gerät.
-    if (window.localStorage.getItem(STANDORT_ERLAUBT_SCHLUESSEL) === "1") return;
-    window.localStorage.setItem(STANDORT_ERLAUBT_SCHLUESSEL, "1");
-  } catch {
-    // Kein Storage-Zugriff (privater Modus) - dann eben jedes Mal fragen.
-  }
-}
-
-/**
- * Berechtigungsstatus für den Standort, oder `null`, wenn der Browser
- * darüber keine Auskunft gibt.
- *
- * Bewusst großzügig abgesichert: Safari auf iOS kennt den Deskriptor
- * "geolocation" nicht. Je nach Version fehlt `navigator.permissions` ganz
- * oder die Abfrage wirft - teils als abgelehntes Versprechen, teils sofort.
- * Ein sofortiger Wurf umgeht jedes angehängte `.catch()` und riss vorher
- * die ganze App mit sich (der Effekt starb, React baute den Baum ab, die
- * Seite war eingefroren). Deshalb hier alles in einer async-Funktion mit
- * try/catch - damit wird auch ein sofortiger Wurf zu einem stillen `null`.
- */
-async function berechtigungsStatus(): Promise<PermissionStatus | null> {
-  try {
-    if (!navigator.permissions?.query) return null;
-    return await navigator.permissions.query({ name: "geolocation" });
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Sind das brauchbare Koordinaten?
- *
- * MapLibre wirft bei ungültigen Werten `Invalid LngLat object: (NaN, NaN)`.
- * Das Tückische daran: Ist die Kameraposition der Karte einmal auf NaN
- * gesetzt, wirft danach JEDE weitere Berechnung darauf erneut - beim
- * Zeichnen, beim Verschieben, beim Nachladen. Die Karte reagiert dann auf
- * nichts mehr, während der Rest der App normal weiterläuft. Genau dieses
- * Bild gab es auf dem iPhone.
- *
- * Deshalb wird jeder Wert geprüft, bevor er die Karte erreicht: `null`,
- * `undefined`, Text und NaN fallen hier raus. Number.isFinite() deckt
- * zusätzlich Infinity ab.
- */
-function sindKoordinatenBrauchbar(lat: unknown, lon: unknown): boolean {
-  return (
-    typeof lat === "number" &&
-    typeof lon === "number" &&
-    Number.isFinite(lat) &&
-    Number.isFinite(lon) &&
-    Math.abs(lat) <= 90 &&
-    Math.abs(lon) <= 180
-  );
-}
 
 const ENTPRELLUNG_MS = 300;
 const MIN_RADIUS_M = 300;
@@ -181,7 +94,6 @@ export function MapView() {
   const mapRef = useRef<MapLibreMap | null>(null);
   const entprellungRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const orteRef = useRef<PlaceNearby[]>([]);
-  const [zeigeStandortHinweis, setZeigeStandortHinweis] = useState(false);
   const [beobachtungsLabel, setBeobachtungsLabel] = useState(
     NOTFALL_BEOBACHTUNGSLABEL,
   );
@@ -216,26 +128,24 @@ export function MapView() {
     ausgewaehlteTypIds: [] as string[],
   });
   const ladeOrteRef = useRef<() => void>(() => {});
+
+  // Standort, Marker, Verfolgung und Zentrieren stecken in einem eigenen
+  // Baustein - siehe useEigenerStandort.ts.
+  const {
+    zeigeStandortHinweis,
+    hinweisSchliessen,
+    standortHinweisOderDirekt,
+    standortVerwenden,
+    aufStandortZentrieren,
+    aufraeumen,
+    zentrierenAbbrechen,
+  } = useEigenerStandort(mapRef, aktiverTab);
   // Der Kartenaufbau laeuft nur einmal und wuerde `gemerkt` sonst in seinem
   // ersten Stand einfrieren - deshalb ueber eine Ref hereinreichen.
   const gemerktRef = useRef<ReadonlySet<string>>(gemerkt);
   const warAktivRef = useRef(false);
   const kartenBereitRef = useRef(false);
 
-  // Eigener Standort: Marker + laufende Verfolgung. `verfolgungGewuenscht`
-  // merkt sich, dass die Person den Standort freigegeben hat - die
-  // Verfolgung selbst pausiert, solange die Karte nicht der aktive Tab ist
-  // (watchPosition im Hintergrund kostet unnötig Akku).
-  const standortMarkerRef = useRef<Marker | null>(null);
-  const letzterStandortRef = useRef<{ lat: number; lon: number } | null>(null);
-  const watchIdRef = useRef<number | null>(null);
-  const verfolgungGewuenschtRef = useRef(false);
-  // Gewünschte Zoomstufe, sobald die ERSTE Position hereinkommt - danach
-  // wieder null. Nötig, weil die erste Ortung je nach Gerät mehrere
-  // Sekunden dauert: Wir können nicht auf getCurrentPosition() allein
-  // bauen (dessen Timeout lief beim Kaltstart oft ab, bevor macOS eine
-  // Position lieferte - die Karte blieb dann auf München stehen).
-  const zentrierenZoomRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -464,46 +374,16 @@ export function MapView() {
     // Bewegung wäre ärgerlich. `originalEvent` unterscheidet dabei die
     // Geste von unserem eigenen flyTo(). Der Zentrieren-Button bleibt.
     map.on("movestart", (e) => {
-      if (e.originalEvent) zentrierenZoomRef.current = null;
+      if (e.originalEvent) zentrierenAbbrechen();
     });
 
     return () => {
       if (entprellungRef.current) clearTimeout(entprellungRef.current);
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-      standortMarkerRef.current = null;
+      aufraeumen();
       map.remove();
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- die Karte wird bewusst nur einmal aufgebaut; standortHinweisOderDirekt arbeitet ausschließlich auf Refs und Settern
-  }, []);
-
-  // Wird der Standort ANDERSWO freigegeben - im Onboarding beim ersten
-  // Start oder in den Browser-Einstellungen -, bekommt die Karte das sonst
-  // nicht mit: Sie hat ihre Entscheidung beim Aufbau getroffen und bliebe
-  // über München stehen. Die Permissions-API meldet solche Wechsel, und wir
-  // holen die Zentrierung dann nach.
-  useEffect(() => {
-    let status: PermissionStatus | null = null;
-    let verworfen = false;
-
-    berechtigungsStatus().then((s) => {
-      if (verworfen || !s) return;
-      status = s;
-      s.onchange = () => {
-        if (s.state !== "granted") return;
-        setZeigeStandortHinweis(false);
-        standortVerwenden();
-      };
-    });
-
-    return () => {
-      verworfen = true;
-      if (status) status.onchange = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- soll nur einmal eingehängt werden; standortVerwenden arbeitet ausschließlich auf Refs und Settern
   }, []);
 
   // Merkliste geaendert? Dann die Marker sofort neu zeichnen - ohne die
@@ -541,26 +421,6 @@ export function MapView() {
     // falschen Bedingung blockierte der Waechter genau dann, wenn er
     // greifen sollte.
     if (wurdeAktiv && mapRef.current) ladeOrteRef.current();
-  }, [aktiverTab]);
-
-  // Standortverfolgung pausiert, solange die Karte nicht der aktive Tab ist:
-  // Die Karte bleibt dauerhaft gemountet (siehe oben), watchPosition würde
-  // sonst auch im Album und im Konto weiterlaufen und Akku ziehen.
-  useEffect(() => {
-    if (!verfolgungGewuenschtRef.current) return;
-
-    if (aktiverTab && watchIdRef.current === null) {
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (position) =>
-          standortMarkerSetzen(position.coords.latitude, position.coords.longitude),
-        () => {},
-        { enableHighAccuracy: true, maximumAge: 10_000 },
-      );
-    }
-    if (!aktiverTab && watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
   }, [aktiverTab]);
 
   // Fahrzeugtyp-Katalog für den Filter (Gruppen kommen aus der DB, CLAUDE.md
@@ -614,159 +474,6 @@ export function MapView() {
           null)
         : `${ausgewaehlteTypIds.length} Fahrzeugtypen`;
 
-  // Setzt bzw. verschiebt den Punkt "hier bin ich". Der Marker wird einmal
-  // gebaut und danach nur noch umgesetzt, damit beim Gehen kein neues
-  // DOM-Element pro Positionsmeldung entsteht.
-  function standortMarkerSetzen(lat: number, lon: number) {
-    const map = mapRef.current;
-    if (!map) return;
-    // Manche Geräte melden unbrauchbare Werte, statt einen Fehler zu
-    // liefern. Eine solche Position darf die Karte nie erreichen.
-    if (!sindKoordinatenBrauchbar(lat, lon)) {
-      console.error("Unbrauchbare Position verworfen:", lat, lon);
-      return;
-    }
-    letzterStandortRef.current = { lat, lon };
-    // Eine Position bekommen wir nur mit Erlaubnis - das ist also der
-    // verlässlichste Beleg dafür, dass zugestimmt wurde.
-    standortErlaubnisMerken();
-
-    if (!standortMarkerRef.current) {
-      const punkt = document.createElement("div");
-      punkt.setAttribute("aria-hidden", "true");
-      punkt.style.width = "18px";
-      punkt.style.height = "18px";
-      punkt.style.borderRadius = "50%";
-      punkt.style.background = EIGENER_STANDORT_FARBE;
-      punkt.style.border = "3px solid #ffffff";
-      punkt.style.boxShadow = "0 0 0 1px rgba(0,0,0,.18), 0 2px 6px rgba(0,0,0,.3)";
-      standortMarkerRef.current = new Marker({ element: punkt })
-        .setLngLat([lon, lat])
-        .addTo(map);
-    } else {
-      standortMarkerRef.current.setLngLat([lon, lat]);
-    }
-
-    // Erste Position nach einem "zentrieren"-Wunsch: jetzt dorthin.
-    //
-    // Geflogen wird nur, wenn der Kartenstil schon steht. Ein flyTo() ist
-    // eine Animation, und MapLibre sperrt währenddessen die Bedienung der
-    // Karte. Startet die Animation, bevor der Stil geladen ist, kann sie
-    // hängen bleiben - dann bleibt die Karte dauerhaft gesperrt und
-    // reagiert auf keine Berührung mehr. Am Schreibtisch fällt das nie
-    // auf, weil der Stil längst da ist; am Handy im Mobilfunknetz ist er
-    // es oft noch nicht.
-    //
-    // Vorher gibt es deshalb jumpTo(): setzt die Kamera sofort und ohne
-    // Animation. Nichts wird gesperrt, und sobald der Stil eintrifft,
-    // zeichnet MapLibre an der richtigen Stelle.
-    const zielZoom = zentrierenZoomRef.current;
-    if (zielZoom !== null) {
-      zentrierenZoomRef.current = null;
-      const ziel = { center: [lon, lat] as [number, number], zoom: zielZoom };
-      if (map.loaded()) map.flyTo(ziel);
-      else map.jumpTo(ziel);
-    }
-  }
-
-  function standortVerfolgen() {
-    verfolgungGewuenschtRef.current = true;
-    if (watchIdRef.current !== null) return; // läuft schon
-    if (!("geolocation" in navigator)) return;
-
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (position) =>
-        standortMarkerSetzen(position.coords.latitude, position.coords.longitude),
-      () => {
-        // Ablehnung oder Fehler: kein Punkt, keine Meldung - die Karte
-        // bleibt ohne eigenen Standort nutzbar (keine Sackgasse).
-      },
-      { enableHighAccuracy: true, maximumAge: 10_000 },
-    );
-  }
-
-  // Entscheidet beim Öffnen der Karte, ob der erklärende Hinweis nötig ist:
-  //  - "granted": Der Standort ist in diesem Browser schon freigegeben. Dann
-  //    noch einmal um Erlaubnis zu bitten wäre unnötig - die Karte fliegt
-  //    direkt zur eigenen Position.
-  //  - "denied": Ein Tap auf "Standort verwenden" würde gar keinen
-  //    Browser-Dialog mehr auslösen und liefe ins Leere (Sackgasse). Der
-  //    Hinweis bleibt deshalb weg; der Zentrieren-Button bleibt sichtbar.
-  //  - "prompt" / Permissions-API nicht verfügbar: wie bisher erst erklären,
-  //    dann fragen.
-  //  - "prompt", aber das Onboarding läuft gerade zum ersten Mal: Das fragt
-  //    selbst nach dem Standort. Hier noch einmal zu fragen wäre die zweite
-  //    Frage in Folge. Wir warten stattdessen auf die Freigabe (siehe den
-  //    Effekt weiter unten, der auf Änderungen der Berechtigung hört).
-  async function standortHinweisOderDirekt() {
-    const zustand = (await berechtigungsStatus())?.state ?? null;
-
-    if (zustand === "granted") {
-      standortVerwenden();
-      return;
-    }
-    if (zustand === "denied") return;
-
-    // `null` heißt nicht "abgelehnt", sondern "der Browser sagt es uns
-    // nicht" - der Normalfall auf dem iPhone. Dann entscheidet unsere
-    // eigene Notiz: Wer schon einmal zugestimmt hat, wird nicht erneut
-    // gefragt. Ohne das kam der Hinweis dort bei jedem Laden wieder.
-    if (zustand === null && standortSchonErlaubt()) {
-      standortVerwenden();
-      return;
-    }
-
-    if (!onboardingSchonGelaufen()) return;
-    setZeigeStandortHinweis(true);
-  }
-
-  function standortVerwenden(zoom: number = ZOOM_UEBERSICHT) {
-    setZeigeStandortHinweis(false);
-
-    // Zweiter Riegel gegen denselben Fehler: Was hier hereinkommt, geht
-    // direkt in die Kameraposition der Karte. Ein einziger unsauberer
-    // Aufruf reicht, um sie unbrauchbar zu machen.
-    const zielZoom = Number.isFinite(zoom) ? zoom : ZOOM_UEBERSICHT;
-
-    if (!("geolocation" in navigator)) return; // alter Browser: stiller Fallback
-
-    // Zentriert wird, sobald die erste Position da ist - egal ob sie aus
-    // getCurrentPosition() oder aus der laufenden Verfolgung kommt.
-    zentrierenZoomRef.current = zielZoom;
-    standortVerfolgen();
-    navigator.geolocation.getCurrentPosition(
-      (position) =>
-        standortMarkerSetzen(position.coords.latitude, position.coords.longitude),
-      () => {
-        // Ablehnung oder Fehler (Timeout, kein GPS, ...): einfach beim
-        // München-Fallback bleiben, keine Fehlermeldung, keine Sackgasse.
-        // Ein späterer Treffer der Verfolgung zentriert dann immer noch.
-      },
-      { enableHighAccuracy: false, timeout: 8000 },
-    );
-  }
-
-  // "Auf meinen Standort zentrieren": Ist die Position schon bekannt, geht
-  // es sofort dorthin; sonst wird sie jetzt geholt (und dabei gleich die
-  // laufende Verfolgung gestartet).
-  function aufStandortZentrieren() {
-    setZeigeStandortHinweis(false);
-    const bekannt = letzterStandortRef.current;
-    if (bekannt) {
-      const karte = mapRef.current;
-      const ziel = {
-        center: [bekannt.lon, bekannt.lat] as [number, number],
-        zoom: ZOOM_STANDORT_BUTTON,
-      };
-      // Gleiche Vorsicht wie oben: animiert nur bei geladenem Stil.
-      if (karte?.loaded()) karte.flyTo(ziel);
-      else karte?.jumpTo(ziel);
-      standortVerfolgen();
-      return;
-    }
-    standortVerwenden(ZOOM_STANDORT_BUTTON);
-  }
-
   // Zwei getrennte Wrapper statt einem: `position: fixed` erzeugt in
   // modernen Browsern IMMER einen eigenen Stacking-Context, unabhängig vom
   // z-index. Ein einzelner `fixed`-Wrapper um Karte + Sheets/FAB würde deren
@@ -814,7 +521,7 @@ export function MapView() {
             // weil eine Funktion mit optionalem Parameter zu `() => void`
             // passt.
             onUseLocation={() => standortVerwenden()}
-            onDismiss={() => setZeigeStandortHinweis(false)}
+            onDismiss={hinweisSchliessen}
           />
         )}
         <FilterPillRow
