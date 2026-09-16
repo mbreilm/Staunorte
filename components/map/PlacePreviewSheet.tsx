@@ -6,6 +6,7 @@ import type { ActivityState, PlaceNearby } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { formatDistance } from "@/lib/geo/distance";
 import { buildRouteUrl } from "@/lib/geo/routeLink";
+import { MerkenButton } from "@/components/merkliste/MerkenButton";
 import { AktivitaetsBadge } from "@/components/place/AktivitaetsBadge";
 import { IconFotoPlatzhalter } from "@/lib/icons";
 
@@ -145,6 +146,16 @@ export function PlacePreviewSheet({ ort, beobachtungsLabel, onClose }: Props) {
             >
               Route öffnen
             </a>
+            {/* Nur der Stern: In dieser Leiste ist kein Platz fuer ein
+                drittes beschriftetes Feld, ohne dass alle drei zu schmal
+                werden. `key` erzwingt einen frischen Zustand, wenn das
+                Sheet fuer einen anderen Ort geoeffnet wird. */}
+            <MerkenButton
+              key={ort.id}
+              placeId={ort.id}
+              initialGemerkt={ort.is_bookmarked === true}
+              variante="kompakt"
+            />
           </div>
         </div>
       </div>

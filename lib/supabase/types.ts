@@ -473,6 +473,21 @@ export type Database = {
         Relationships: [];
       };
 
+      place_bookmarks: {
+        Row: { user_id: string; place_id: string; created_at: string };
+        Insert: { user_id: string; place_id: string; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["place_bookmarks"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "place_bookmarks_place_id_fkey";
+            columns: ["place_id"];
+            isOneToOne: false;
+            referencedRelation: "places";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+
       feedback: {
         Row: {
           id: string;
@@ -604,6 +619,7 @@ export type Database = {
           p_category?: string;
           p_only_active?: boolean;
           p_observable_type_ids?: string[] | null;
+          p_only_bookmarked?: boolean;
         };
         Returns: {
           id: string;
@@ -618,6 +634,7 @@ export type Database = {
           activity: ActivityState;
           fresh_observables: number;
           thumb_path: string | null;
+          is_bookmarked: boolean;
         }[];
       };
 
@@ -736,6 +753,28 @@ export type Database = {
       };
 
       // Fotoverwaltung (0015) - ebenfalls nur für Admins.
+      merkliste_umschalten: {
+        Args: { p_place_id: string };
+        Returns: boolean;
+      };
+      merkliste_orte: {
+        Args: { p_lat?: number | null; p_lon?: number | null };
+        Returns: {
+          id: string;
+          title: string;
+          address: string | null;
+          lat: number;
+          lon: number;
+          distance_m: number | null;
+          status: PlaceStatus;
+          source: PlaceSource;
+          is_confirmed: boolean;
+          checkin_count: number;
+          activity: ActivityState;
+          gemerkt_am: string;
+          thumb_path: string | null;
+        }[];
+      };
       feedback_senden: {
         Args: {
           p_gefaellt?: string | null;

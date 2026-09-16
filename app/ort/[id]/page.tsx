@@ -9,6 +9,7 @@ import { CheckinButton } from "@/components/checkin/CheckinButton";
 import { FotoGalerie } from "@/components/place/FotoGalerie";
 import { FahrzeugListe } from "@/components/place/FahrzeugListe";
 import { RouteButton } from "@/components/place/RouteButton";
+import { MerkenButton } from "@/components/merkliste/MerkenButton";
 import { ArbeitszeitenBearbeitenButton } from "@/components/arbeitszeiten/ArbeitszeitenBearbeitenButton";
 import { formatArbeitszeiten } from "@/lib/format/arbeitszeiten";
 import { leiteMusterAb } from "@/lib/format/activityPattern";
@@ -58,6 +59,7 @@ export default async function OrtDetailSeite({
     { data: beobachtungen },
     { data: arbeitszeiten },
     { data: aktivitaetsMuster },
+    { data: merkEintrag },
   ] = await Promise.all([
     supabase
       .from("place_categories")
@@ -84,6 +86,14 @@ export default async function OrtDetailSeite({
     ort.checkin_count >= WERTENDE_CHECKINS_FUER_MUSTER
       ? supabase.from("place_activity").select("*").eq("place_id", id)
       : Promise.resolve({ data: null }),
+    // Steht dieser Ort auf meiner Merkliste? Die Zeilenschutzregel liefert
+    // ohnehin nur eigene Eintraege, ein Filter auf die Nutzerkennung ist
+    // daher nicht noetig.
+    supabase
+      .from("place_bookmarks")
+      .select("place_id")
+      .eq("place_id", id)
+      .maybeSingle(),
   ]);
 
   const angegebeneZeiten = formatArbeitszeiten(arbeitszeiten ?? []);
@@ -195,6 +205,10 @@ export default async function OrtDetailSeite({
             />
           </div>
           {standort && <RouteButton lat={standort.lat} lon={standort.lon} />}
+        </div>
+
+        <div className="mt-2 flex">
+          <MerkenButton placeId={id} initialGemerkt={merkEintrag !== null} />
         </div>
 
         <div className="mt-6 text-center">

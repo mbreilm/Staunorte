@@ -12,6 +12,8 @@ type Props = {
   nurAktiv: boolean;
   onNurAktivToggle: () => void;
   nurFahrzeugeSichtbar: boolean;
+  nurGemerkte: boolean;
+  onNurGemerkteToggle: () => void;
   onNurFahrzeugeSichtbarToggle: () => void;
   typen: ObservableType[];
   ausgewaehlteTypIds: string[];
@@ -30,6 +32,8 @@ export function FilterSheet({
   nurAktiv,
   onNurAktivToggle,
   nurFahrzeugeSichtbar,
+  nurGemerkte,
+  onNurGemerkteToggle,
   onNurFahrzeugeSichtbarToggle,
   typen,
   ausgewaehlteTypIds,
@@ -85,6 +89,12 @@ export function FilterSheet({
           hinweis="in den Arbeitszeiten oder im beobachteten Peak"
           aktiv={nurAktiv}
           onClick={onNurAktivToggle}
+        />
+        <FilterSchalterZeile
+          label="Nur meine Merkliste"
+          hinweis="Orte, die du dir vorgemerkt hast"
+          aktiv={nurGemerkte}
+          onClick={onNurGemerkteToggle}
         />
         <FilterSchalterZeile
           label="Fahrzeuge aktuell gesehen"

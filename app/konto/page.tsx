@@ -61,6 +61,9 @@ function KontoContent() {
           <p className="text-sm text-muted">Angemeldet als</p>
           <p className="mt-1 font-medium">{user.email}</p>
         </div>
+        <Link href="/merkliste" className="btn btn-secondary h-12 text-base">
+          Deine Merkliste
+        </Link>
         <Link href="/feedback" className="btn btn-secondary h-12 text-base">
           Deine Meinung sagen
         </Link>

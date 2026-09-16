@@ -149,6 +149,7 @@ function baueFeatureCollection(
       const farbig = ort.fresh_observables > 0;
       const gestrichelt = ort.source === "open_data" && !ort.is_confirmed;
       const aktiv = ort.activity === "aktiv";
+      const gemerkt = ort.is_bookmarked === true;
 
       return {
         type: "Feature",
@@ -157,7 +158,7 @@ function baueFeatureCollection(
         properties: {
           id: ort.id,
           title: ort.title,
-          iconKey: markerIconKey({ farbig, gestrichelt, aktiv }),
+          iconKey: markerIconKey({ farbig, gestrichelt, aktiv, gemerkt }),
         },
       };
     }),
@@ -197,6 +198,7 @@ export function MapView() {
   const [radiusAnzeigeM, setRadiusAnzeigeM] = useState(3000);
   const [nurAktiv, setNurAktiv] = useState(false);
   const [nurFahrzeugeSichtbar, setNurFahrzeugeSichtbar] = useState(false);
+  const [nurGemerkte, setNurGemerkte] = useState(false);
   const [ausgewaehlteTypIds, setAusgewaehlteTypIds] = useState<string[]>([]);
 
   // ladeOrte() entsteht erst innerhalb des Karten-Effekts (unten) und
@@ -207,6 +209,7 @@ export function MapView() {
     radiusUeberschreibungM: null as number | null,
     nurAktiv: false,
     nurFahrzeugeSichtbar: false,
+    nurGemerkte: false,
     ausgewaehlteTypIds: [] as string[],
   });
   const ladeOrteRef = useRef<() => void>(() => {});
@@ -309,6 +312,7 @@ export function MapView() {
         p_observable_type_ids: filterRef.current.ausgewaehlteTypIds.length
           ? filterRef.current.ausgewaehlteTypIds
           : null,
+        p_only_bookmarked: filterRef.current.nurGemerkte,
       });
 
       if (error) {
@@ -536,10 +540,17 @@ export function MapView() {
       radiusUeberschreibungM,
       nurAktiv,
       nurFahrzeugeSichtbar,
+      nurGemerkte,
       ausgewaehlteTypIds,
     };
     if (kartenBereitRef.current) ladeOrteRef.current();
-  }, [radiusUeberschreibungM, nurAktiv, nurFahrzeugeSichtbar, ausgewaehlteTypIds]);
+  }, [
+    radiusUeberschreibungM,
+    nurAktiv,
+    nurFahrzeugeSichtbar,
+    nurGemerkte,
+    ausgewaehlteTypIds,
+  ]);
 
   function radiusWaehlen(meter: number) {
     setRadiusUeberschreibungM((aktuell) => (aktuell === meter ? null : meter));
@@ -777,6 +788,8 @@ export function MapView() {
             onNurAktivToggle={() => setNurAktiv((v) => !v)}
             nurFahrzeugeSichtbar={nurFahrzeugeSichtbar}
             onNurFahrzeugeSichtbarToggle={() => setNurFahrzeugeSichtbar((v) => !v)}
+            nurGemerkte={nurGemerkte}
+            onNurGemerkteToggle={() => setNurGemerkte((v) => !v)}
             typen={observableTypes}
             ausgewaehlteTypIds={ausgewaehlteTypIds}
             onTypToggle={typToggle}

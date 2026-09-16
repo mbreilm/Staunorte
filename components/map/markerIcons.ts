@@ -6,34 +6,40 @@
 // Stil "Ring mit Fahrzeug-Icon": heller Kreis mit farbigem Ring statt
 // voller Füllung, Kran-Silhouette in der Mitte statt reinem Punkt.
 //
-// Es gibt 8 Kombinationen: Farbe (frisch/alt) × Rand (voll/gestrichelt) ×
-// Aktivitäts-Punkt (an/aus). Jede wird einmal pro Kartensitzung gezeichnet
-// und über map.addImage() als "iconKey" verfügbar gemacht.
+// Es gibt 16 Kombinationen: Farbe (frisch/alt) × Rand (voll/gestrichelt) ×
+// Aktivitäts-Punkt (an/aus) × Merkliste (ja/nein). Jede wird einmal pro
+// Kartensitzung gezeichnet und über map.addImage() als "iconKey"
+// verfügbar gemacht.
 import type { Map as MapLibreMap } from "maplibre-gl";
 
 const GRAU = "#a19786"; // --color-neutral-500: "keine frische Sichtung" - keine Kategoriefarbe, sondern ein Datenzustand
 const RING_GRUND = "#f9f4ed"; // --color-neutral-100: helle Ringfüllung, unabhängig von der Kategoriefarbe
-const AKTIV_PUNKT = "#8fa073"; // --color-accent-2-500: Status-Grün für "gerade in Arbeitszeiten"
+const AKTIV_PUNKT = "#8fa073";
+// Der Stern für die eigene Merkliste. Bewusst der Akzentton der App und
+// nicht das Aktivitäts-Grün: Das eine ist ein Zustand der Baustelle, das
+// andere eine persönliche Notiz - die dürfen nicht verwechselbar sein.
+const MERK_STERN = "#c67139"; // --color-accent-2-500: Status-Grün für "gerade in Arbeitszeiten"
 
 type IconVariante = {
   farbig: boolean;
   gestrichelt: boolean;
   aktiv: boolean;
+  gemerkt: boolean;
 };
 
-const VARIANTEN: IconVariante[] = [
-  { farbig: false, gestrichelt: false, aktiv: false },
-  { farbig: false, gestrichelt: false, aktiv: true },
-  { farbig: false, gestrichelt: true, aktiv: false },
-  { farbig: false, gestrichelt: true, aktiv: true },
-  { farbig: true, gestrichelt: false, aktiv: false },
-  { farbig: true, gestrichelt: false, aktiv: true },
-  { farbig: true, gestrichelt: true, aktiv: false },
-  { farbig: true, gestrichelt: true, aktiv: true },
-];
+// Ausgeschrieben waeren es 16 Zeilen - erzeugt statt getippt, damit beim
+// naechsten Zustand nicht wieder jede Kombination von Hand nachgezogen
+// werden muss.
+const VARIANTEN: IconVariante[] = [false, true].flatMap((farbig) =>
+  [false, true].flatMap((gestrichelt) =>
+    [false, true].flatMap((aktiv) =>
+      [false, true].map((gemerkt) => ({ farbig, gestrichelt, aktiv, gemerkt })),
+    ),
+  ),
+);
 
 export function markerIconKey(v: IconVariante): string {
-  return `platz-${v.farbig ? "farbig" : "grau"}-${v.gestrichelt ? "gestrichelt" : "voll"}-${v.aktiv ? "aktiv" : "ruhe"}`;
+  return `platz-${v.farbig ? "farbig" : "grau"}-${v.gestrichelt ? "gestrichelt" : "voll"}-${v.aktiv ? "aktiv" : "ruhe"}-${v.gemerkt ? "gemerkt" : "offen"}`;
 }
 
 /**
@@ -50,6 +56,7 @@ export function registerMarkerIcons(map: MapLibreMap, akzentfarbe: string) {
       farbe: variante.farbig ? akzentfarbe : GRAU,
       gestrichelt: variante.gestrichelt,
       zeigePunkt: variante.aktiv,
+      zeigeStern: variante.gemerkt,
     });
     map.addImage(key, bild, { pixelRatio: 2 });
   }
@@ -59,6 +66,7 @@ function zeichneIcon(opts: {
   farbe: string;
   gestrichelt: boolean;
   zeigePunkt: boolean;
+  zeigeStern: boolean;
 }): ImageData {
   // 48 physische Pixel = 24 CSS-Pixel bei pixelRatio 2 - für scharfe
   // Marker auch auf Retina-Displays.
@@ -102,7 +110,38 @@ function zeichneIcon(opts: {
     ctx.stroke();
   }
 
+  // Stern unten links - gegenueber dem Aktivitaets-Punkt oben rechts,
+  // damit sich beide nie ueberdecken.
+  if (opts.zeigeStern) {
+    zeichneStern(ctx, mitte - radius * 0.72, mitte + radius * 0.72, 7.5);
+  }
+
   return ctx.getImageData(0, 0, size, size);
+}
+
+function zeichneStern(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    // Abwechselnd aussen und innen ergibt die fuenf Zacken.
+    const laenge = i % 2 === 0 ? r : r * 0.45;
+    const winkel = (Math.PI / 5) * i - Math.PI / 2;
+    const x = cx + Math.cos(winkel) * laenge;
+    const y = cy + Math.sin(winkel) * laenge;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = MERK_STERN;
+  ctx.fill();
+  // Weisser Rand, damit der Stern auch auf dunklen Kacheln steht.
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#ffffff";
+  ctx.stroke();
 }
 
 // Minimalistische Turmdrehkran-Silhouette - passt zu keiner einzelnen
