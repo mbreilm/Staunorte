@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -8,7 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { ZurueckPfeil } from "@/components/icons/ZurueckPfeil";
 import { AktivitaetsBadge } from "@/components/place/AktivitaetsBadge";
 import { AKTIVITAETS_TEXT_DETAIL } from "@/lib/format/activity";
-import { holeEigenePosition } from "@/lib/geo/position";
+import { holeEigenePosition, type EigenePosition } from "@/lib/geo/position";
+import { haversineMeters } from "@/lib/geo/distance";
 import type { Database } from "@/lib/supabase/types";
 
 type Eintrag = Database["public"]["Functions"]["merkliste_orte"]["Returns"][number];
@@ -24,6 +25,7 @@ export default function MerklistePage() {
   const { user, isLoading, requireAuth } = useAuth();
   const router = useRouter();
   const [eintraege, setEintraege] = useState<Eintrag[] | null>(null);
+  const [position, setPosition] = useState<EigenePosition | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,13 +36,15 @@ export default function MerklistePage() {
     }
   }, [isLoading, user, requireAuth, router]);
 
+  // Die Liste kommt SOFORT, ohne auf den Standort zu warten. Vorher stand
+  // hier ein `await holeEigenePosition()` davor - mit hoher Genauigkeit und
+  // acht Sekunden Zeitlimit. Die Datenbank wurde also erst gefragt, wenn
+  // das GPS geantwortet hatte, und bei schlechtem Empfang stand minutenlang
+  // "Wird geladen" da für eine Abfrage, die Millisekunden dauert.
   const laden = useCallback(async () => {
-    // Standort ist freiwillig: Ohne ihn sortiert die Datenbank nach
-    // "zuletzt gemerkt" statt nach Entfernung.
-    const position = await holeEigenePosition();
     const { data, error } = await createClient().rpc("merkliste_orte", {
-      p_lat: position?.lat ?? null,
-      p_lon: position?.lon ?? null,
+      p_lat: null,
+      p_lon: null,
     });
     if (error) {
       setFehler(error.message);
@@ -58,6 +62,35 @@ export default function MerklistePage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user) void laden();
   }, [user, laden]);
+
+  // Der Standort läuft nebenher. Trifft er ein, wird die schon sichtbare
+  // Liste nach Entfernung umsortiert - ohne zweite Datenbankabfrage, die
+  // Koordinaten liegen ja vor.
+  useEffect(() => {
+    let verworfen = false;
+    // Grob reicht: Angezeigt wird "4,2 km entfernt", nicht der Meter.
+    // Eine zwischengespeicherte Position bis fünf Minuten Alter ist dafür
+    // genau genug und kommt sofort statt nach Sekunden.
+    holeEigenePosition({ genau: false, maxAlterMs: 300_000, timeoutMs: 5000 }).then((p) => {
+      if (!verworfen && p) setPosition(p);
+    });
+    return () => {
+      verworfen = true;
+    };
+  }, []);
+
+  const angezeigt = useMemo(() => {
+    if (!eintraege || !position) return eintraege;
+    return eintraege
+      .map((e) => ({
+        ...e,
+        distance_m: haversineMeters(
+          { lat: position.lat, lon: position.lon },
+          { lat: e.lat, lon: e.lon },
+        ),
+      }))
+      .sort((a, b) => (a.distance_m ?? 0) - (b.distance_m ?? 0));
+  }, [eintraege, position]);
 
   async function entfernen(placeId: string) {
     // Sofort aus der Liste nehmen; die Datenbank zieht nach.
@@ -83,9 +116,9 @@ export default function MerklistePage() {
         </p>
       )}
 
-      {eintraege === null && <p className="text-sm text-muted">Wird geladen …</p>}
+      {angezeigt === null && <p className="text-sm text-muted">Wird geladen …</p>}
 
-      {eintraege?.length === 0 && (
+      {angezeigt?.length === 0 && (
         <div className="card">
           <p className="card-title">Noch nichts gemerkt</p>
           <p className="mt-1 text-sm text-muted">
@@ -98,9 +131,9 @@ export default function MerklistePage() {
         </div>
       )}
 
-      {eintraege && eintraege.length > 0 && (
+      {angezeigt && angezeigt.length > 0 && (
         <ul className="flex flex-col gap-3">
-          {eintraege.map((e) => (
+          {angezeigt.map((e) => (
             <li key={e.id} className="card">
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
