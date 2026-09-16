@@ -105,9 +105,17 @@ export function OrteListe({ initial }: { initial: Ort[] }) {
   }
 
   async function loeschen(ort: Ort) {
-    const ok = await aktion(ort.id, () =>
-      supabase.rpc("admin_ort_loeschen", { p_place_id: ort.id }),
-    );
+    // Ebenfalls ueber die Route - sie raeumt zuerst die Bilddateien weg.
+    const ok = await aktion(ort.id, async () => {
+      const antwort = await fetch("/api/admin/ort-loeschen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ placeId: ort.id }),
+      });
+      return {
+        error: antwort.ok ? null : new Error("Der Ort konnte nicht gelöscht werden."),
+      };
+    });
     if (ok) {
       setOrte((liste) => liste.filter((o) => o.id !== ort.id));
     }
@@ -148,14 +156,19 @@ export function OrteListe({ initial }: { initial: Ort[] }) {
     if (neuOffen && !fotosNachOrt[neuOffen]) fotosLaden(neuOffen);
   }
 
+  // Über die Server-Route statt direkt per Datenbankfunktion: Nur dort
+  // laesst sich auch die Bilddatei entfernen. Frueher blieb sie liegen und
+  // war weiter oeffentlich abrufbar.
   async function fotoLoeschen(placeId: string, fotoId: string) {
     setFotoAktionId(fotoId);
-    const { error } = await supabase.rpc("admin_foto_loeschen", {
-      p_photo_id: fotoId,
+    const antwort = await fetch("/api/admin/foto-loeschen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fotoId }),
     });
     setFotoAktionId(null);
-    if (error) {
-      setFehler(error.message);
+    if (!antwort.ok) {
+      setFehler("Das Foto konnte nicht gelöscht werden.");
       return;
     }
     setFotosNachOrt((vorher) => ({
