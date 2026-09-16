@@ -86,6 +86,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           className="relative h-full w-full max-w-[430px] overflow-hidden flex flex-col"
           style={{ background: "var(--color-bg)", contain: "layout" }}
         >
+          {/* AuthProvider umschliesst den GESAMTEN Rahmen, nicht nur den
+              Seiteninhalt. Die Karte liegt ausserhalb des scrollenden
+              Bereichs, braucht die Anmeldung aber ebenfalls - das
+              Vorschau-Sheet enthaelt den Merken-Knopf. Stand der Provider
+              nur um {children}, warf useAuth() dort eine Ausnahme und riss
+              die ganze Seite mit sich. Der Provider rendert selbst kein
+              DOM-Element, das Flex-Layout des Rahmens bleibt also
+              unveraendert. */}
+          <AuthProvider>
           {/* Dauerhaft gemountet (nicht pro Route) - siehe components/map/MapView.tsx. */}
           <MapView />
           {/* Einziger scrollender Bereich im Rahmen - BottomNav & Co. sind
@@ -95,7 +104,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               nie unter seine Inhaltshöhe, wodurch overflow-y-auto nie
               greifen und der Rahmen selbst aufgebläht würde. */}
           <div className="min-h-0 flex-1 overflow-y-auto flex flex-col">
-            <AuthProvider>{children}</AuthProvider>
+            {children}
           </div>
           <BottomNav />
           <Onboarding />
@@ -104,6 +113,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <LoadingScreen />
           <AnalyticsProvider />
           <SeitenaufrufZaehler />
+          </AuthProvider>
         </div>
       </body>
     </html>
